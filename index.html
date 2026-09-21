@@ -1,5 +1,6 @@
 <title>NZSU21 Wellness</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -455,14 +456,50 @@ const PLAYERS = PLAYER_NAMES.map((name,i)=>{
   return { id: slugify(name), name, initials, avBg, avCl };
 });
 
-function loadData(){
+/* ══════════════════ SUPABASE (shared storage) ══════════════════ */
+const SUPABASE_URL = 'https://jfmfbuulmeiihfbnlgrt.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_QrN4H6ncYjiz8Qm9GGP2Zg_Leo4khGt';
+const sb = (window.supabase && SUPABASE_URL && SUPABASE_KEY)
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
+function loadDataLocal(){
   try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; }
   catch(e){ return {}; }
 }
-function saveData(data){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
+function saveDataLocal(data){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
 
-let DATA = loadData();
+let DATA = loadDataLocal();
 PLAYERS.forEach(p=>{ if(!DATA[p.id]) DATA[p.id] = { entries: [] }; });
+
+function rowToEntry(row){
+  return {
+    date: row.date,
+    sleepQ: row.sleep_q, sleepStart: row.sleep_start, sleepEnd: row.sleep_end, sleepHours: row.sleep_hours,
+    fatigue: row.fatigue, soreness: row.soreness, mood: row.mood, injury: row.injury, bodyMap: row.body_map,
+    activity: row.activity, rpe: row.rpe, minutes: row.minutes
+  };
+}
+
+/* Pulls every entry from Supabase and rebuilds the in-memory DATA cache.
+   Falls back silently to whatever is already in DATA (e.g. from localStorage) if offline. */
+async function loadAllEntries(){
+  if(!sb) return;
+  try{
+    const { data, error } = await sb.from('entries').select('*');
+    if(error){ console.error('Supabase load error', error); return; }
+    const fresh = {};
+    PLAYERS.forEach(p=>{ fresh[p.id] = { entries: [] }; });
+    (data||[]).forEach(row=>{
+      const pid = row.player_id;
+      if(!fresh[pid]) fresh[pid] = { entries: [] };
+      fresh[pid].entries.push(rowToEntry(row));
+    });
+    Object.keys(fresh).forEach(pid=> fresh[pid].entries.sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0));
+    DATA = fresh;
+    saveDataLocal(DATA);
+  }catch(e){ console.error('Supabase load failed', e); }
+}
 
 function todayStr(){
   const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
@@ -471,13 +508,31 @@ function todayStr(){
 function shortDate(dk){ const d = new Date(dk+'T00:00:00'); return d.getDate()+'.'+(d.getMonth()+1)+'.'; }
 function shiftDate(dk, days){ const d = new Date(dk+'T00:00:00'); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
 function findEntry(pid, dk){ return DATA[pid].entries.find(e=>e.date===dk); }
+
 function upsertEntry(pid, dk, patch){
   const arr = DATA[pid].entries;
   let idx = arr.findIndex(e=>e.date===dk);
   if(idx===-1){ arr.push(Object.assign({date:dk}, patch)); }
   else{ arr[idx] = Object.assign({}, arr[idx], patch); }
   arr.sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
-  saveData(DATA);
+  saveDataLocal(DATA);
+  syncEntryToSupabase(pid, dk);
+}
+
+function syncEntryToSupabase(pid, dk){
+  if(!sb) return;
+  const merged = findEntry(pid, dk);
+  if(!merged) return;
+  const row = {
+    id: pid+'_'+dk, player_id: pid, date: dk,
+    sleep_q: merged.sleepQ ?? null, sleep_start: merged.sleepStart ?? null, sleep_end: merged.sleepEnd ?? null,
+    sleep_hours: merged.sleepHours ?? null, fatigue: merged.fatigue ?? null, soreness: merged.soreness ?? null,
+    mood: merged.mood ?? null, injury: merged.injury ?? null, body_map: merged.bodyMap ?? null,
+    activity: merged.activity ?? null, rpe: merged.rpe ?? null, minutes: merged.minutes ?? null
+  };
+  sb.from('entries').upsert(row).then(({error})=>{
+    if(error){ console.error('Supabase save error', error); toast('Saved on this device, but sync to the shared database failed.'); }
+  });
 }
 
 /* ══════════════════ NAV ══════════════════ */
@@ -667,9 +722,10 @@ const Entry = {
   wellness: { sleepQ:null, sleepStart: 3*60, sleepEnd: 10*60+30, fatigue:null, soreness:null, mood:null, injury:null, bodyMap:null },
   rpe: { activity:null, rpe:null, minutes:'' },
 
-  openWellness(){
+  async openWellness(){
     const p = PLAYERS.find(x=>x.id===currentPlayerId);
     document.getElementById('wellness-player-name').textContent = p.name+' · '+todayStr();
+    await loadAllEntries();
     const existing = findEntry(currentPlayerId, todayStr());
     this.wellness = existing ? {
       sleepQ: existing.sleepQ ?? null,
@@ -799,9 +855,10 @@ const Entry = {
     setTimeout(()=>Nav.go(afterSaveScreen()), 900);
   },
 
-  openRpe(){
+  async openRpe(){
     const p = PLAYERS.find(x=>x.id===currentPlayerId);
     document.getElementById('rpe-player-name').textContent = p.name+' · '+todayStr();
+    await loadAllEntries();
     const existing = findEntry(currentPlayerId, todayStr());
     this.rpe = existing && existing.rpe!=null ? { activity: existing.activity||'trening', rpe: existing.rpe, minutes: existing.minutes||'' }
       : { activity:'trening', rpe:null, minutes:'' };
@@ -1060,11 +1117,12 @@ const Reports = {
   dailyDate: todayStr(),
   playerId: PLAYERS[0].id,
 
-  switchTab(tab){
+  async switchTab(tab){
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
     document.getElementById('tab-'+tab).classList.add('active');
     document.getElementById('rep-'+tab).classList.add('active');
+    await loadAllEntries(); // pull the latest shared data before showing the report
     if(tab==='daily') this.renderDaily();
     if(tab==='player') this.renderPlayer();
     if(tab==='team') this.renderTeam();
@@ -1319,4 +1377,5 @@ const Reports = {
 
 /* ══════════════════ INIT ══════════════════ */
 renderPlayerList();
+loadAllEntries(); // pull shared data from Supabase in the background; screens that need it re-fetch on open
 </script>
