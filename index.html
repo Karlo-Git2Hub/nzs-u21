@@ -1,0 +1,1322 @@
+<title>NZSU21 Wellness</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0f1c;
+  --surface:#131b2e;
+  --surface-2:#1a2438;
+  --border:#26314c;
+  --border-soft:#1e2740;
+  --text:#eef1f7;
+  --muted:#8892a8;
+  --muted-dim:#5c667f;
+  --accent:#5b82f6;
+  --accent-soft:#233257;
+  --good:#3ec281;
+  --good-dim:#8bc98a;
+  --warn:#f0b83d;
+  --bad:#ef4a5c;
+  --purple:#a97ee8;
+  --font-display:'Sora',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:var(--font-display);text-wrap:balance;margin:0}
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex;flex-direction:column}
+button{font-family:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+
+.appbar{
+  display:flex;align-items:center;gap:12px;
+  padding:14px 18px;
+  border-bottom:1px solid var(--border-soft);
+  position:sticky;top:env(safe-area-inset-top,0px);
+  background:var(--bg);z-index:20;flex-shrink:0;
+}
+.appbar-back{background:var(--surface);border:1px solid var(--border);color:var(--text);width:36px;height:36px;border-radius:10px;font-size:16px;cursor:pointer;flex-shrink:0}
+.appbar-titles{flex:1;min-width:0}
+.appbar-title{font-size:16px;font-weight:700;color:#fff}
+.appbar-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.appbar-exit{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:6px 4px}
+
+.wrap{padding:18px;flex:1}
+.wrap-narrow{max-width:520px;margin:0 auto;width:100%}
+
+.hero{
+  display:flex;flex-direction:column;align-items:center;
+  padding-block:64px 32px;padding-inline:20px;
+  text-align:center;
+}
+.hero-mark{
+  width:64px;height:64px;border-radius:18px;
+  background:linear-gradient(155deg,var(--accent),#2e4fc7);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;margin-bottom:18px;
+  box-shadow:0 12px 28px -12px rgba(91,130,246,.55);
+}
+.hero-title{font-size:26px;font-weight:800;color:#fff;letter-spacing:.01em}
+.hero-sub{font-size:13px;color:var(--muted);margin-top:6px;letter-spacing:.02em}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border-soft);
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:14px;
+}
+.card-title{
+  font-family:var(--font-display);
+  font-size:14px;font-weight:700;color:var(--text);
+  margin-bottom:14px;display:flex;align-items:center;gap:8px;
+}
+.card-hint{font-size:12px;color:var(--muted);font-weight:400;margin-left:auto;text-align:right}
+
+.big-btn{
+  width:100%;padding:16px;font-size:15px;font-weight:700;
+  border:none;border-radius:14px;cursor:pointer;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  transition:transform .1s;
+}
+.big-btn:active{transform:scale(.98)}
+.big-btn.primary{background:var(--accent);color:#fff}
+.big-btn.secondary{background:var(--surface-2);color:var(--text);border:1px solid var(--border)}
+
+.name-list{display:flex;flex-direction:column;gap:9px}
+.name-btn{
+  width:100%;text-align:left;padding:13px 16px;font-size:14.5px;font-weight:600;
+  color:var(--text);background:var(--surface);border:1px solid var(--border-soft);
+  border-radius:14px;cursor:pointer;display:flex;align-items:center;gap:12px;
+}
+.name-btn:active{background:var(--surface-2)}
+.name-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;font-family:var(--font-display)}
+.name-chevron{margin-left:auto;color:var(--muted-dim);font-size:14px}
+
+.field-row{margin-bottom:20px}
+.field-row:last-child{margin-bottom:0}
+.field-label{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:2px;display:block}
+.field-scale-hint{font-size:12px;color:var(--muted);font-weight:400;margin-bottom:10px}
+.field-input{width:100%;padding:11px 13px;font-size:14px;border:1px solid var(--border);border-radius:11px;background:var(--surface-2);color:var(--text)}
+.field-input::placeholder{color:var(--muted-dim)}
+
+.scale-row{display:flex;gap:7px}
+.scale-btn{
+  flex:1;aspect-ratio:1;min-height:44px;border-radius:12px;border:1px solid var(--border);
+  background:var(--surface-2);color:var(--muted);font-size:15px;font-weight:700;cursor:pointer;
+  font-variant-numeric:tabular-nums;
+}
+.scale-btn.sel{color:#fff;border-color:transparent}
+
+.toggle-row{display:flex;gap:8px}
+.toggle-btn{flex:1;padding:13px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);font-weight:700;font-size:14px;cursor:pointer}
+.toggle-btn.sel{background:var(--accent-soft);border-color:var(--accent);color:#fff}
+.toggle-btn.sel.warn-sel{background:rgba(239,74,92,.16);border-color:var(--bad);color:#ff9aa6}
+
+.sleep-track-wrap{margin-top:6px}
+.sleep-clock-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted-dim);margin-bottom:8px;font-variant-numeric:tabular-nums}
+.sleep-slider{position:relative;height:40px;margin-bottom:4px}
+.sleep-slider input[type=range]{
+  position:absolute;top:12px;left:0;width:100%;height:16px;
+  -webkit-appearance:none;appearance:none;background:transparent;pointer-events:none;margin:0;
+}
+.sleep-slider input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;pointer-events:auto;width:22px;height:22px;border-radius:50%;
+  border:3px solid var(--bg);cursor:pointer;margin-top:-3px;
+}
+.sleep-slider input[type=range]::-moz-range-thumb{
+  pointer-events:auto;width:22px;height:22px;border-radius:50%;border:3px solid var(--bg);cursor:pointer;
+}
+.sleep-slider input[type=range]::-webkit-slider-runnable-track{height:16px;background:transparent}
+#sleep-start::-webkit-slider-thumb{background:var(--purple)}
+#sleep-end::-webkit-slider-thumb{background:var(--accent)}
+#sleep-start::-moz-range-thumb{background:var(--purple)}
+#sleep-end::-moz-range-thumb{background:var(--accent)}
+.sleep-rail{position:absolute;top:16px;left:0;right:0;height:8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--border)}
+.sleep-rail-fill{position:absolute;top:0;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--purple),var(--accent))}
+.sleep-readout{display:flex;align-items:baseline;justify-content:space-between;margin-top:6px}
+.sleep-duration{font-family:var(--font-display);font-size:22px;font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+.sleep-duration-lbl{font-size:12px;color:var(--muted)}
+.sleep-times{display:flex;gap:16px;font-size:12px;color:var(--muted);margin-top:2px}
+.sleep-times b{color:var(--text);font-variant-numeric:tabular-nums}
+
+.save-btn{
+  width:100%;padding:16px;font-size:15px;font-weight:800;border:none;border-radius:14px;
+  cursor:pointer;background:var(--good);color:#04231a;margin-top:4px;
+  font-family:var(--font-display);
+}
+.save-btn:disabled{opacity:.4;cursor:not-allowed}
+
+.rpe-scale-list{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-top:12px}
+.rpe-scale-item{display:flex;gap:10px;font-size:12.5px;padding:3px 0;color:var(--muted)}
+.rpe-scale-item b{width:16px;flex-shrink:0;font-variant-numeric:tabular-nums}
+
+.toast{
+  position:fixed;bottom:calc(24px + env(safe-area-inset-bottom,0px));left:18px;right:18px;
+  background:var(--surface-2);border:1px solid var(--good);color:var(--text);
+  padding:14px 18px;border-radius:14px;text-align:center;font-size:14px;font-weight:700;
+  display:none;z-index:80;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);
+}
+
+.pin-input{
+  width:100%;padding:16px;font-size:26px;letter-spacing:.4em;text-align:center;
+  border:1px solid var(--border);border-radius:14px;background:var(--surface-2);color:var(--text);
+  margin-bottom:16px;font-variant-numeric:tabular-nums;
+}
+
+.tabs{display:flex;gap:6px;padding:12px 18px 0;flex-shrink:0}
+.tab{flex:1;padding:11px 6px;font-size:12px;font-weight:700;text-align:center;border-radius:11px 11px 0 0;background:var(--surface);color:var(--muted);cursor:pointer;border:1px solid var(--border-soft);border-bottom:none}
+.tab.active{background:var(--bg);color:var(--text);border-color:var(--border-soft);position:relative}
+.tab.active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--bg)}
+.tab-content{display:none;padding:16px 18px;flex:1;overflow-y:auto}
+.tab-content.active{display:block}
+
+.stat-row{display:flex;gap:10px;margin-bottom:16px}
+.stat-box{flex:1;background:var(--surface);border:1px solid var(--border-soft);border-radius:14px;padding:14px 8px;text-align:center}
+.stat-num{font-family:var(--font-display);font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.stat-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+
+.date-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
+.date-nav-btn{background:var(--surface);border:1px solid var(--border-soft);color:var(--text);border-radius:11px;padding:9px 14px;font-size:15px;cursor:pointer}
+.date-nav-label{font-size:14.5px;font-weight:700;color:#fff;flex:1;text-align:center;text-transform:capitalize}
+
+.player-row{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border-soft);border-left:3px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:9px}
+.status-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dot-green{background:var(--good)}.dot-yellow{background:var(--warn)}.dot-red{background:var(--bad)}.dot-none{background:var(--muted-dim)}
+.pr-left{flex:1;min-width:0}
+.pr-name{font-size:13.5px;font-weight:700;color:#fff}
+.pr-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.pr-badges{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;max-width:44%}
+.badge{min-width:24px;height:24px;padding:0 6px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.b-g1{background:var(--good);color:#04231a}.b-g2{background:#7fd19a;color:#04231a}.b-y{background:var(--warn);color:#2b1c00}.b-o{background:#f0904a;color:#2b1400}.b-r{background:var(--bad);color:#fff}.b-p{background:var(--purple);color:#1c0f2e}
+
+.select-wrap{margin-bottom:16px}
+.select-input{width:100%;padding:12px 13px;font-size:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);color:var(--text)}
+
+.score-hero{display:flex;align-items:baseline;gap:7px;margin-bottom:4px}
+.score-big{font-family:var(--font-display);font-size:38px;font-weight:800;color:var(--good);font-variant-numeric:tabular-nums}
+.score-denom{font-size:15px;color:var(--muted)}
+
+.chip-row{display:flex;gap:8px;flex-wrap:wrap}
+.chip{background:var(--surface-2);border:1px solid var(--border);border-radius:20px;padding:8px 14px;font-size:12px;color:var(--text);font-variant-numeric:tabular-nums}
+.chip b{color:#fff}
+
+.empty-state{text-align:center;padding:26px 10px;color:var(--muted-dim);font-size:13px}
+.legend-row{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-top:10px}
+.legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+
+.bar-row{margin-bottom:11px}
+.bar-head{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text);margin-bottom:4px}
+.bar-track{height:7px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px}
+
+.mode-toggle-row{display:flex;gap:8px;margin-bottom:16px}
+.mode-btn{flex:1;padding:12px 8px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);font-weight:700;font-size:12.5px;cursor:pointer}
+.mode-btn.sel-tight{background:rgba(240,144,74,.16);border-color:#f0904a;color:#ffb27a}
+.mode-btn.sel-pain{background:rgba(239,74,92,.16);border-color:#ef4a5c;color:#ff9aa6}
+.view-tabs{display:flex;gap:8px;margin-bottom:14px}
+.view-tab{flex:1;padding:10px;border-radius:10px;border:1px solid var(--border-soft);background:var(--surface);color:var(--muted);font-weight:700;font-size:13px;cursor:pointer}
+.view-tab.active{background:var(--accent-soft);border-color:var(--accent);color:#fff}
+.bodymap-svg-wrap{display:flex;justify-content:center;padding:6px 0}
+.bodymap-hint{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px}
+</style>
+
+<!-- ══ HOME ══ -->
+<div id="screen-home" class="screen active">
+  <div class="hero">
+    <div class="hero-mark">⚡</div>
+    <div class="hero-title">NZSU21</div>
+    <div class="hero-sub">WELLNESS &amp; RPE MONITORING</div>
+  </div>
+  <div class="wrap wrap-narrow">
+    <div class="card">
+      <div class="card-title">Who are you?</div>
+      <button class="big-btn primary" onclick="Nav.go('screen-player-select')">⚽&nbsp; I'm a player</button>
+      <button class="big-btn secondary" onclick="Nav.go('screen-pin')">📊&nbsp; Reports</button>
+      <button class="big-btn secondary" onclick="Nav.go('screen-coach-email')">🩺&nbsp; Club fitness coach</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PLAYER SELECT ══ -->
+<div id="screen-player-select" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="Nav.go('screen-home')">←</button>
+    <div class="appbar-titles"><div class="appbar-title">Select your name</div></div>
+  </div>
+  <div class="wrap wrap-narrow">
+    <div class="name-list" id="player-list-wrap"></div>
+  </div>
+</div>
+
+<!-- ══ PLAYER PIN (birthdate) ══ -->
+<div id="screen-player-pin" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="Nav.go('screen-player-select')">←</button>
+    <div class="appbar-titles">
+      <div class="appbar-title">Verify your identity</div>
+      <div class="appbar-sub" id="player-pin-name">—</div>
+    </div>
+  </div>
+  <div class="wrap wrap-narrow">
+    <div class="card">
+      <div class="field-label" style="margin-bottom:6px">Enter your date of birth</div>
+      <div class="field-scale-hint" style="margin-bottom:14px">Enter in DD/MM/YYYY format, e.g. <b style="color:var(--text)">12/04/2008</b></div>
+      <input type="text" inputmode="numeric" class="pin-input" id="player-pin-field" placeholder="DD/MM/YYYY" maxlength="10" style="letter-spacing:.12em;font-size:20px" oninput="Auth.formatInput(this)">
+      <button class="big-btn primary" onclick="Auth.check()">Enter</button>
+      <div id="player-pin-error" style="color:var(--bad);font-size:12.5px;margin-top:6px;display:none;font-weight:600">Date of birth doesn't match. Try again.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ENTRY MENU (per-player) ══ -->
+<div id="screen-entry-menu" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="Nav.go(entryOrigin)">←</button>
+    <div class="appbar-titles">
+      <div class="appbar-title" id="menu-player-name">—</div>
+      <div class="appbar-sub" id="menu-player-date">—</div>
+    </div>
+  </div>
+  <div class="wrap wrap-narrow">
+    <div class="card">
+      <div class="card-title">What would you like to submit?</div>
+      <button class="big-btn primary" onclick="Entry.openWellness()">🌙&nbsp; Morning wellness check-in</button>
+      <button class="big-btn secondary" onclick="Entry.openRpe()">⚡&nbsp; Rate of perceived exertion (RPE)</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WELLNESS ENTRY ══ -->
+<div id="screen-wellness" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="Nav.go('screen-entry-menu')">←</button>
+    <div class="appbar-titles">
+      <div class="appbar-title">Morning wellness check-in</div>
+      <div class="appbar-sub" id="wellness-player-name">—</div>
+    </div>
+  </div>
+  <div class="wrap wrap-narrow" id="wellness-form-wrap"></div>
+</div>
+
+<!-- ══ RPE ENTRY ══ -->
+<div id="screen-rpe" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="Nav.go('screen-entry-menu')">←</button>
+    <div class="appbar-titles">
+      <div class="appbar-title">Rate of perceived exertion (RPE)</div>
+      <div class="appbar-sub" id="rpe-player-name">—</div>
+    </div>
+  </div>
+  <div class="wrap wrap-narrow" id="rpe-form-wrap"></div>
+</div>
+
+<!-- ══ BODY MAP ══ -->
+<div id="screen-bodymap" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="BodyMap.back()">←</button>
+    <div class="appbar-titles">
+      <div class="appbar-title">Pain area</div>
+      <div class="appbar-sub" id="bodymap-player-name">—</div>
+    </div>
+  </div>
+  <div class="wrap wrap-narrow" id="bodymap-wrap"></div>
+</div>
+
+<!-- ══ PIN ══ -->
+<div id="screen-pin" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="Nav.go('screen-home')">←</button>
+    <div class="appbar-titles"><div class="appbar-title">National coach — sign in</div></div>
+  </div>
+  <div class="wrap wrap-narrow">
+    <div class="card">
+      <div class="field-label" style="margin-bottom:10px">Enter the password to access reports</div>
+      <input type="password" class="pin-input" id="pin-field" placeholder="Password" maxlength="20" style="letter-spacing:.08em;font-size:20px">
+      <button class="big-btn primary" onclick="Reports.checkPin()">Enter</button>
+      <div id="pin-error" style="color:var(--bad);font-size:12.5px;margin-top:6px;display:none;font-weight:600">Incorrect password. Try again.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CLUB COACH — EMAIL ══ -->
+<div id="screen-coach-email" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="Nav.go('screen-home')">←</button>
+    <div class="appbar-titles"><div class="appbar-title">Club fitness coach</div></div>
+  </div>
+  <div class="wrap wrap-narrow">
+    <div class="card">
+      <div class="field-label" style="margin-bottom:6px">Enter your email address</div>
+      <div class="field-scale-hint" style="margin-bottom:14px">Use the email the national coach registered you with.</div>
+      <input type="email" class="pin-input" id="coach-email-field" placeholder="you@club.com" style="letter-spacing:0;font-size:16px;text-transform:none">
+      <button class="big-btn primary" onclick="CoachAuth.submitEmail()">Continue</button>
+      <div id="coach-email-error" style="color:var(--bad);font-size:12.5px;margin-top:6px;display:none;font-weight:600">No players are registered for this email. Check with the national coach.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CLUB COACH — PLAYER LIST ══ -->
+<div id="screen-coach-players" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="Nav.go('screen-coach-email')">←</button>
+    <div class="appbar-titles"><div class="appbar-title">Your players</div></div>
+  </div>
+  <div class="wrap wrap-narrow">
+    <div class="card">
+      <div class="card-title">Select a player to log data for</div>
+      <div class="name-list" id="coach-player-list-wrap"></div>
+    </div>
+    <button class="big-btn secondary" onclick="CoachAuth.viewReports()">📊&nbsp; View reports for my players</button>
+  </div>
+</div>
+
+<!-- ══ CLUB COACH — PLAYER DOB CONFIRM ══ -->
+<div id="screen-coach-pin" class="screen">
+  <div class="appbar">
+    <button class="appbar-back" onclick="Nav.go('screen-coach-players')">←</button>
+    <div class="appbar-titles">
+      <div class="appbar-title">Confirm player identity</div>
+      <div class="appbar-sub" id="coach-pin-name">—</div>
+    </div>
+  </div>
+  <div class="wrap wrap-narrow">
+    <div class="card">
+      <div class="field-label" style="margin-bottom:6px">Enter this player's date of birth</div>
+      <div class="field-scale-hint" style="margin-bottom:14px">Format DD/MM/YYYY, e.g. <b style="color:var(--text)">12/04/2008</b></div>
+      <input type="text" inputmode="numeric" class="pin-input" id="coach-pin-field" placeholder="DD/MM/YYYY" maxlength="10" style="letter-spacing:.12em;font-size:20px" oninput="Auth.formatInput(this)">
+      <button class="big-btn primary" onclick="CoachAuth.checkPin()">Enter</button>
+      <div id="coach-pin-error" style="color:var(--bad);font-size:12.5px;margin-top:6px;display:none;font-weight:600">Date of birth doesn't match. Try again.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ REPORTS ══ -->
+<div id="screen-reports" class="screen">
+  <div class="appbar">
+    <div class="appbar-titles"><div class="appbar-title" id="reports-title">📊 Team Report</div></div>
+    <button class="appbar-exit" onclick="Reports.exit()">Exit</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" id="tab-daily" onclick="Reports.switchTab('daily')">Daily</div>
+    <div class="tab" id="tab-player" onclick="Reports.switchTab('player')">By Player</div>
+    <div class="tab" id="tab-team" onclick="Reports.switchTab('team')">Team</div>
+  </div>
+  <div class="tab-content active" id="rep-daily"></div>
+  <div class="tab-content" id="rep-player"></div>
+  <div class="tab-content" id="rep-team"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+
+/* ══════════════════ DATA MODEL ══════════════════ */
+const STORAGE_KEY = 'nzsu21_wellness_v2';
+
+const AV_PALETTE = [
+  ['#3a5aa8','#cfe0ff'],['#a04f2f','#ffe0cf'],['#3f8f6b','#d7f5e6'],['#8a4fae','#f0dcff'],
+  ['#b3862f','#fff1cf'],['#3f7fae','#d9f0ff'],['#ae3f5e','#ffd9e4'],['#5a8f3f','#e6f5d7']
+];
+
+const PLAYER_NAMES = [
+  'Relja Obrić','Luka Topalović','Tian Nai Koren','Niko Kasalo','Lovro Štubljar','David Pejičić',
+  'Leo Rimac','Miha Matjašec','Lovro Golič','Rok Štorman','Nino Milić','Damir Zukić',
+  'Mitja Ilenič','Aldin Jakupović','Matej Malenšek','Jaka Zrnec','Matic Ivanšek','Nejc Viher',
+  'Dominik Drobnič','Markus Cimermančič','Žan Mauricio','Kristjan Bendra','Dino Kojić','Marko Ristić',
+  'Karlo Gračner','Miha Magdič'
+];
+
+function slugify(s){
+  return s.toLowerCase()
+    .replace(/č/g,'c').replace(/ć/g,'c').replace(/š/g,'s').replace(/ž/g,'z').replace(/đ/g,'dj')
+    .replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+}
+
+const PLAYERS = PLAYER_NAMES.map((name,i)=>{
+  const parts = name.split(' ');
+  const initials = (parts[0][0]+parts[parts.length-1][0]).toUpperCase();
+  const [avBg,avCl] = AV_PALETTE[i % AV_PALETTE.length];
+  return { id: slugify(name), name, initials, avBg, avCl };
+});
+
+function loadData(){
+  try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : {}; }
+  catch(e){ return {}; }
+}
+function saveData(data){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }catch(e){} }
+
+let DATA = loadData();
+PLAYERS.forEach(p=>{ if(!DATA[p.id]) DATA[p.id] = { entries: [] }; });
+
+function todayStr(){
+  const d = new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+  return d.toISOString().slice(0,10);
+}
+function shortDate(dk){ const d = new Date(dk+'T00:00:00'); return d.getDate()+'.'+(d.getMonth()+1)+'.'; }
+function shiftDate(dk, days){ const d = new Date(dk+'T00:00:00'); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+function findEntry(pid, dk){ return DATA[pid].entries.find(e=>e.date===dk); }
+function upsertEntry(pid, dk, patch){
+  const arr = DATA[pid].entries;
+  let idx = arr.findIndex(e=>e.date===dk);
+  if(idx===-1){ arr.push(Object.assign({date:dk}, patch)); }
+  else{ arr[idx] = Object.assign({}, arr[idx], patch); }
+  arr.sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0);
+  saveData(DATA);
+}
+
+/* ══════════════════ NAV ══════════════════ */
+function afterSaveScreen(){ return entryOrigin==='screen-coach-players' ? 'screen-coach-players' : 'screen-home'; }
+
+const Nav = {
+  go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
+  }
+};
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display='block';
+  clearTimeout(toast._h);
+  toast._h = setTimeout(()=>{ t.style.display='none'; }, 2200);
+}
+
+/* ══════════════════ PLAYER SELECT ══════════════════ */
+function renderPlayerList(){
+  const wrap = document.getElementById('player-list-wrap');
+  wrap.innerHTML = PLAYERS.map(p=>`
+    <button class="name-btn" onclick="Auth.select('${p.id}')">
+      <span class="name-avatar" style="background:${p.avBg};color:${p.avCl}">${p.initials}</span>
+      ${p.name}
+      <span class="name-chevron">›</span>
+    </button>`).join('');
+}
+
+/* Each player's date of birth (used as the password to open their profile), format 'DD/MM/YYYY'.
+   If the value is null, the app allows entry without a password. */
+const BIRTHDATES = {
+  'relja-obric': '11/04/2006',
+  'luka-topalovic': '23/02/2006',
+  'tian-nai-koren': '31/07/2009',
+  'niko-kasalo': '31/12/2005',
+  'lovro-stubljar': '09/08/2004',
+  'david-pejicic': '14/06/2007',
+  'leo-rimac': '14/03/2006',
+  'miha-matjasec': '22/02/2009',
+  'lovro-golic': '05/03/2006',
+  'rok-storman': '04/09/2004',
+  'nino-milic': '01/05/2004',
+  'damir-zukic': '21/05/2004',
+  'mitja-ilenic': '26/12/2004',
+  'aldin-jakupovic': '04/06/2006',
+  'matej-malensek': '27/05/2005',
+  'jaka-zrnec': '09/06/2006',
+  'matic-ivansek': '26/07/2004',
+  'nejc-viher': '13/02/2008',
+  'dominik-drobnic': '05/04/2007',
+  'markus-cimermancic': '10/01/2004',
+  'zan-mauricio': '16/11/2004',
+  'kristjan-bendra': '30/01/2006',
+  'dino-kojic': '04/04/2005',
+  'marko-ristic': '01/11/2004',
+  'karlo-gracner': '06/06/1993',
+  'miha-magdic': '18/10/1995'
+};
+PLAYERS.forEach(p=>{ if(!(p.id in BIRTHDATES)) BIRTHDATES[p.id] = null; });
+
+/* Club fitness coach access: email (lowercase) -> array of player ids that coach may
+   log data for and see reports on. Filled in manually by the national coach as
+   access is handed out. Example: 'coach@fckoper.si': ['player-id-1','player-id-2'] */
+const CLUB_COACHES = {
+};
+
+const CoachAuth = {
+  email: null,
+  players: [],
+  pendingPlayerId: null,
+
+  submitEmail(){
+    const val = document.getElementById('coach-email-field').value.trim().toLowerCase();
+    const ids = CLUB_COACHES[val];
+    const err = document.getElementById('coach-email-error');
+    if(!ids || !ids.length){ err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    this.email = val;
+    this.players = ids.map(id=>PLAYERS.find(p=>p.id===id)).filter(Boolean);
+    this.renderPlayerList();
+    Nav.go('screen-coach-players');
+  },
+
+  renderPlayerList(){
+    const wrap = document.getElementById('coach-player-list-wrap');
+    wrap.innerHTML = this.players.map(p=>`
+      <button class="name-btn" onclick="CoachAuth.selectPlayer('${p.id}')">
+        <span class="name-avatar" style="background:${p.avBg};color:${p.avCl}">${p.initials}</span>
+        ${p.name}
+        <span class="name-chevron">\u203a</span>
+      </button>`).join('');
+  },
+
+  selectPlayer(pid){
+    this.pendingPlayerId = pid;
+    const p = PLAYERS.find(x=>x.id===pid);
+    document.getElementById('coach-pin-name').textContent = p.name;
+    document.getElementById('coach-pin-field').value = '';
+    document.getElementById('coach-pin-error').style.display = 'none';
+    Nav.go('screen-coach-pin');
+    setTimeout(()=>{ const f=document.getElementById('coach-pin-field'); if(f) f.focus(); }, 50);
+  },
+
+  checkPin(){
+    const val = document.getElementById('coach-pin-field').value.trim();
+    const dob = BIRTHDATES[this.pendingPlayerId];
+    if(val === dob){
+      entryOrigin = 'screen-coach-players';
+      openPlayerMenuAsCoach(this.pendingPlayerId);
+    } else {
+      document.getElementById('coach-pin-error').style.display = 'block';
+    }
+  },
+
+  viewReports(){
+    Reports.scopePlayers = this.players;
+    Reports.playerId = this.players.length ? this.players[0].id : null;
+    Reports.dailyDate = todayStr();
+    document.getElementById('reports-title').textContent = '\ud83d\udcca My Players — Report';
+    Reports.switchTab('daily');
+    Nav.go('screen-reports');
+  }
+};
+
+function openPlayerMenuAsCoach(pid){
+  currentPlayerId = pid;
+  const p = PLAYERS.find(x=>x.id===pid);
+  document.getElementById('menu-player-name').textContent = p.name;
+  document.getElementById('menu-player-date').textContent =
+    new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+  Nav.go('screen-entry-menu');
+}
+
+const Auth = {
+  pendingId: null,
+  select(pid){
+    const dob = BIRTHDATES[pid];
+    if(!dob){ openPlayerMenu(pid); return; }
+    this.pendingId = pid;
+    const p = PLAYERS.find(x=>x.id===pid);
+    document.getElementById('player-pin-name').textContent = p.name;
+    document.getElementById('player-pin-field').value = '';
+    document.getElementById('player-pin-error').style.display = 'none';
+    Nav.go('screen-player-pin');
+    setTimeout(()=>{ const f=document.getElementById('player-pin-field'); if(f) f.focus(); }, 50);
+  },
+  formatInput(el){
+    let digits = el.value.replace(/\D/g,'').slice(0,8);
+    let out = digits;
+    if(digits.length>4) out = digits.slice(0,2)+'/'+digits.slice(2,4)+'/'+digits.slice(4);
+    else if(digits.length>2) out = digits.slice(0,2)+'/'+digits.slice(2);
+    el.value = out;
+  },
+  check(){
+    const val = document.getElementById('player-pin-field').value.trim();
+    const dob = BIRTHDATES[this.pendingId];
+    if(val === dob){ openPlayerMenu(this.pendingId); }
+    else{ document.getElementById('player-pin-error').style.display = 'block'; }
+  }
+};
+
+let currentPlayerId = null;
+let entryOrigin = 'screen-player-select'; // where the entry-menu back button returns to
+
+function openPlayerMenu(pid){
+  currentPlayerId = pid;
+  entryOrigin = 'screen-player-select';
+  const p = PLAYERS.find(x=>x.id===pid);
+  document.getElementById('menu-player-name').textContent = p.name;
+  document.getElementById('menu-player-date').textContent =
+    new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+  Nav.go('screen-entry-menu');
+}
+
+/* ══════════════════ SLEEP WINDOW SLIDER (21:00–10:00) ══════════════════ */
+const SLEEP_WINDOW_MIN = 13*60; // 21:00 -> 10:00 next day = 13h
+function minToClock(m){
+  let total = 21*60 + m; // window starts at 21:00
+  total = total % (24*60);
+  const h = Math.floor(total/60), mi = total%60;
+  return String(h).padStart(2,'0')+':'+String(mi).padStart(2,'0');
+}
+
+const Entry = {
+  wellness: { sleepQ:null, sleepStart: 3*60, sleepEnd: 10*60+30, fatigue:null, soreness:null, mood:null, injury:null, bodyMap:null },
+  rpe: { activity:null, rpe:null, minutes:'' },
+
+  openWellness(){
+    const p = PLAYERS.find(x=>x.id===currentPlayerId);
+    document.getElementById('wellness-player-name').textContent = p.name+' · '+todayStr();
+    const existing = findEntry(currentPlayerId, todayStr());
+    this.wellness = existing ? {
+      sleepQ: existing.sleepQ ?? null,
+      sleepStart: existing.sleepStart ?? 3*60,
+      sleepEnd: existing.sleepEnd ?? 10*60+30,
+      fatigue: existing.fatigue ?? null,
+      soreness: existing.soreness ?? null,
+      mood: existing.mood ?? null,
+      injury: existing.injury ?? null,
+      bodyMap: existing.bodyMap ?? null
+    } : { sleepQ:null, sleepStart: 3*60, sleepEnd: 10*60+30, fatigue:null, soreness:null, mood:null, injury:null, bodyMap:null };
+    this.renderWellness();
+    Nav.go('screen-wellness');
+  },
+
+  renderWellness(){
+    const w = this.wellness;
+    const wrap = document.getElementById('wellness-form-wrap');
+    wrap.innerHTML = `
+      <div class="card">
+        <div class="field-row">
+          <span class="field-label">🌙 Sleep quality</span>
+          <div class="field-scale-hint">1 = very poor · 5 = excellent</div>
+          ${scaleRow('sleepQ', w.sleepQ, 5, ratingColor)}
+        </div>
+        <div class="field-row">
+          <span class="field-label">⏱️ Sleep amount</span>
+          <div class="field-scale-hint">Mark on the scale when you fell asleep and when you woke up (window 21:00–10:00)</div>
+          <div class="sleep-track-wrap">
+            <div class="sleep-clock-labels"><span>21:00</span><span>02:00</span><span>06:00</span><span>10:00</span></div>
+            <div class="sleep-slider">
+              <div class="sleep-rail"></div>
+              <div class="sleep-rail-fill" id="sleep-rail-fill"></div>
+              <input type="range" id="sleep-start" min="0" max="${SLEEP_WINDOW_MIN}" step="15" value="${w.sleepStart}" oninput="Entry.onSleepChange('start', this.value)">
+              <input type="range" id="sleep-end" min="0" max="${SLEEP_WINDOW_MIN}" step="15" value="${w.sleepEnd}" oninput="Entry.onSleepChange('end', this.value)">
+            </div>
+            <div class="sleep-readout">
+              <div><span class="sleep-duration" id="sleep-duration-num">—</span> <span class="sleep-duration-lbl">hours of sleep</span></div>
+            </div>
+            <div class="sleep-times">
+              <span>🛌 Fell asleep: <b id="sleep-start-lbl">—</b></span>
+              <span>☀️ Woke up: <b id="sleep-end-lbl">—</b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="field-row">
+          <span class="field-label">😴 Freshness</span>
+          <div class="field-scale-hint">1 = very tired · 5 = very fresh</div>
+          ${scaleRow('fatigue', w.fatigue, 5, ratingColor)}
+        </div>
+        <div class="field-row">
+          <span class="field-label">💪 Muscle readiness</span>
+          <div class="field-scale-hint">1 = very sore muscles · 5 = no soreness</div>
+          ${scaleRow('soreness', w.soreness, 5, ratingColor)}
+        </div>
+        <div class="field-row">
+          <span class="field-label">😊 Mood</span>
+          <div class="field-scale-hint">1 = very poor · 5 = excellent</div>
+          ${scaleRow('mood', w.mood, 5, ratingColor)}
+        </div>
+      </div>
+      <div class="card">
+        <div class="field-row" style="margin-bottom:${w.injury===true?'14px':'0'}">
+          <span class="field-label">🩹 Pain, tightness or signs of injury?</span>
+          <div class="toggle-row" style="margin-top:10px">
+            <button type="button" class="toggle-btn ${w.injury===false?'sel':''}" onclick="Entry.setInjury(false)">No</button>
+            <button type="button" class="toggle-btn ${w.injury===true?'warn-sel sel':''}" onclick="Entry.setInjury(true)">Yes</button>
+          </div>
+        </div>
+        ${w.injury===true ? `
+        <button type="button" class="big-btn secondary" style="margin-bottom:0" onclick="BodyMap.open(Entry.wellness.bodyMap)">🗺️&nbsp; ${bodyMapSummaryText(w.bodyMap)}</button>` : ''}
+      </div>
+      <button class="save-btn" onclick="Entry.saveWellness()">✓ Submit</button>
+    `;
+    this.syncSleepUI();
+  },
+
+  onSleepChange(which, val){
+    val = parseInt(val);
+    if(which==='start'){ this.wellness.sleepStart = Math.min(val, this.wellness.sleepEnd - 15); }
+    else{ this.wellness.sleepEnd = Math.max(val, this.wellness.sleepStart + 15); }
+    document.getElementById('sleep-start').value = this.wellness.sleepStart;
+    document.getElementById('sleep-end').value = this.wellness.sleepEnd;
+    this.syncSleepUI();
+  },
+
+  syncSleepUI(){
+    const w = this.wellness;
+    const pct1 = (w.sleepStart/SLEEP_WINDOW_MIN*100).toFixed(1);
+    const pct2 = (w.sleepEnd/SLEEP_WINDOW_MIN*100).toFixed(1);
+    const fill = document.getElementById('sleep-rail-fill');
+    if(fill){ fill.style.left = pct1+'%'; fill.style.width = (pct2-pct1)+'%'; }
+    const durMin = w.sleepEnd - w.sleepStart;
+    const dNum = document.getElementById('sleep-duration-num');
+    if(dNum) dNum.textContent = (durMin/60).toFixed(1);
+    const sLbl = document.getElementById('sleep-start-lbl');
+    const eLbl = document.getElementById('sleep-end-lbl');
+    if(sLbl) sLbl.textContent = minToClock(w.sleepStart);
+    if(eLbl) eLbl.textContent = minToClock(w.sleepEnd);
+  },
+
+  setRating(key, val){
+    this.wellness[key] = (this.wellness[key]===val) ? null : val;
+    this.renderWellness();
+  },
+  setInjury(val){
+    this.wellness.injury = (this.wellness.injury===val) ? null : val;
+    if(this.wellness.injury === true){
+      BodyMap.open(this.wellness.bodyMap);
+    } else {
+      this.wellness.bodyMap = null;
+      this.renderWellness();
+    }
+  },
+
+  saveWellness(){
+    const w = this.wellness;
+    upsertEntry(currentPlayerId, todayStr(), {
+      sleepQ: w.sleepQ, sleepStart: w.sleepStart, sleepEnd: w.sleepEnd,
+      sleepHours: +( (w.sleepEnd - w.sleepStart)/60 ).toFixed(2),
+      fatigue: w.fatigue, soreness: w.soreness, mood: w.mood, injury: w.injury,
+      bodyMap: w.injury===true ? (w.bodyMap||{front:{},back:{}}) : null
+    });
+    toast('Wellness check-in saved. Thank you!');
+    setTimeout(()=>Nav.go(afterSaveScreen()), 900);
+  },
+
+  openRpe(){
+    const p = PLAYERS.find(x=>x.id===currentPlayerId);
+    document.getElementById('rpe-player-name').textContent = p.name+' · '+todayStr();
+    const existing = findEntry(currentPlayerId, todayStr());
+    this.rpe = existing && existing.rpe!=null ? { activity: existing.activity||'trening', rpe: existing.rpe, minutes: existing.minutes||'' }
+      : { activity:'trening', rpe:null, minutes:'' };
+    this.renderRpe();
+    Nav.go('screen-rpe');
+  },
+
+  renderRpe(){
+    const r = this.rpe;
+    const wrap = document.getElementById('rpe-form-wrap');
+    wrap.innerHTML = `
+      <div class="card">
+        <div class="field-row">
+          <span class="field-label">Activity type</span>
+          <div class="toggle-row" style="margin-top:10px">
+            <button type="button" class="toggle-btn ${r.activity==='trening'?'sel':''}" onclick="Entry.setActivity('trening')">Training</button>
+            <button type="button" class="toggle-btn ${r.activity==='tekma'?'sel':''}" onclick="Entry.setActivity('tekma')">Match</button>
+          </div>
+        </div>
+        <div class="field-row" style="margin-bottom:0">
+          <span class="field-label">⚡ Rate the effort of training / match</span>
+          <div class="field-scale-hint">1 = rest · 10 = maximal</div>
+          ${scaleRow10('rpe', r.rpe)}
+          <div class="rpe-scale-list">
+            ${['Rest','Very light','Light','Moderate','Somewhat hard','Hard','Very hard','Very very hard','Near max','Maximal']
+              .map((lbl,i)=>`<div class="rpe-scale-item" style="color:${rpeColor(i+1)}"><b>${i+1}</b><span style="color:var(--muted)">${lbl}</span></div>`).join('')}
+          </div>
+        </div>
+      </div>
+      ${r.activity==='tekma' ? `
+      <div class="card">
+        <div class="field-row" style="margin-bottom:0">
+          <span class="field-label">🏟️ Minutes played</span>
+          <input type="number" class="field-input" min="0" max="120" placeholder="e.g. 90" value="${r.minutes||''}" oninput="Entry.rpe.minutes=this.value" style="margin-top:8px">
+        </div>
+      </div>` : ''}
+      <button class="save-btn" onclick="Entry.saveRpe()">✓ Submit</button>
+    `;
+  },
+  setActivity(a){ this.rpe.activity = a; this.renderRpe(); },
+  setRpe(v){ this.rpe.rpe = (this.rpe.rpe===v)?null:v; this.renderRpe(); },
+  saveRpe(){
+    const r = this.rpe;
+    upsertEntry(currentPlayerId, todayStr(), {
+      activity: r.activity, rpe: r.rpe,
+      minutes: r.activity==='tekma' && r.minutes ? parseInt(r.minutes) : null
+    });
+    toast('RPE saved. Thank you!');
+    setTimeout(()=>Nav.go(afterSaveScreen()), 900);
+  }
+};
+
+function ratingColor(v){
+  if(v>=5) return '#3ec281'; if(v===4) return '#7fd19a'; if(v===3) return '#f0b83d';
+  if(v===2) return '#f0904a'; return '#ef4a5c';
+}
+function rpeColor(v){
+  if(v<=2) return '#3ec281'; if(v<=4) return '#7fd19a'; if(v<=6) return '#f0b83d';
+  if(v<=8) return '#f0904a'; return '#ef4a5c';
+}
+function scaleRow(key, sel, max, colorFn){
+  let html = '<div class="scale-row">';
+  for(let i=1;i<=max;i++){
+    const on = sel===i;
+    const bg = on ? colorFn(i) : null;
+    html += `<button type="button" class="scale-btn ${on?'sel':''}" style="${on?`background:${bg};border-color:${bg}`:''}" onclick="Entry.setRating('${key}',${i})">${i}</button>`;
+  }
+  return html+'</div>';
+}
+function scaleRow10(key, sel){
+  let html = '<div class="scale-row" style="flex-wrap:wrap">';
+  for(let i=1;i<=10;i++){
+    const on = sel===i;
+    const bg = on ? rpeColor(i) : null;
+    html += `<button type="button" class="scale-btn ${on?'sel':''}" style="flex:0 0 18%;${on?`background:${bg};border-color:${bg}`:''}" onclick="Entry.setRpe(${i})">${i}</button>`;
+  }
+  return html+'</div>';
+}
+
+/* ══════════════════ BODY MAP ══════════════════ */
+const BODY_REGIONS = {
+  front: [
+    {id:'head', label:'Head', shape:'ellipse', cx:110, cy:35, rx:22, ry:26},
+    {id:'neck', label:'Neck', shape:'rect', x:100, y:58, w:20, h:14, rx:6},
+    {id:'shoulder-l', label:'Shoulder L', shape:'ellipse', cx:72, cy:80, rx:17, ry:13},
+    {id:'shoulder-r', label:'Shoulder R', shape:'ellipse', cx:148, cy:80, rx:17, ry:13},
+    {id:'chest', label:'Chest', shape:'rect', x:82, y:72, w:56, h:50, rx:10},
+    {id:'abdomen', label:'Abdomen', shape:'rect', x:86, y:122, w:48, h:44, rx:8},
+    {id:'upperarm-l', label:'Upper arm L', shape:'rect', x:50, y:88, w:20, h:58, rx:10},
+    {id:'upperarm-r', label:'Upper arm R', shape:'rect', x:150, y:88, w:20, h:58, rx:10},
+    {id:'elbow-l', label:'Elbow L', shape:'ellipse', cx:60, cy:150, rx:12, ry:10},
+    {id:'elbow-r', label:'Elbow R', shape:'ellipse', cx:160, cy:150, rx:12, ry:10},
+    {id:'forearm-l', label:'Forearm L', shape:'rect', x:48, y:158, w:20, h:52, rx:10},
+    {id:'forearm-r', label:'Forearm R', shape:'rect', x:152, y:158, w:20, h:52, rx:10},
+    {id:'hand-l', label:'Hand L', shape:'ellipse', cx:58, cy:218, rx:13, ry:15},
+    {id:'hand-r', label:'Hand R', shape:'ellipse', cx:162, cy:218, rx:13, ry:15},
+    {id:'hip-l', label:'Hip L', shape:'rect', x:80, y:166, w:24, h:28, rx:8},
+    {id:'groin', label:'Groin', shape:'rect', x:104, y:166, w:12, h:28, rx:4},
+    {id:'hip-r', label:'Hip R', shape:'rect', x:116, y:166, w:24, h:28, rx:8},
+    {id:'quad-l', label:'Quad L', shape:'rect', x:78, y:196, w:28, h:70, rx:10},
+    {id:'quad-r', label:'Quad R', shape:'rect', x:114, y:196, w:28, h:70, rx:10},
+    {id:'knee-l', label:'Knee L', shape:'ellipse', cx:92, cy:274, rx:15, ry:13},
+    {id:'knee-r', label:'Knee R', shape:'ellipse', cx:128, cy:274, rx:15, ry:13},
+    {id:'shin-l', label:'Shin L', shape:'rect', x:80, y:287, w:24, h:64, rx:8},
+    {id:'shin-r', label:'Shin R', shape:'rect', x:116, y:287, w:24, h:64, rx:8},
+    {id:'foot-l', label:'Foot L', shape:'ellipse', cx:92, cy:362, rx:16, ry:12},
+    {id:'foot-r', label:'Foot R', shape:'ellipse', cx:128, cy:362, rx:16, ry:12}
+  ],
+  back: [
+    {id:'head', label:'Head', shape:'ellipse', cx:110, cy:35, rx:22, ry:26},
+    {id:'neck', label:'Neck', shape:'rect', x:100, y:58, w:20, h:14, rx:6},
+    {id:'shoulder-l', label:'Shoulder L', shape:'ellipse', cx:72, cy:80, rx:17, ry:13},
+    {id:'shoulder-r', label:'Shoulder R', shape:'ellipse', cx:148, cy:80, rx:17, ry:13},
+    {id:'upperback', label:'Upper back', shape:'rect', x:82, y:72, w:56, h:50, rx:10},
+    {id:'lowerback', label:'Lower back', shape:'rect', x:86, y:122, w:48, h:44, rx:8},
+    {id:'upperarm-l', label:'Upper arm L', shape:'rect', x:50, y:88, w:20, h:58, rx:10},
+    {id:'upperarm-r', label:'Upper arm R', shape:'rect', x:150, y:88, w:20, h:58, rx:10},
+    {id:'elbow-l', label:'Elbow L', shape:'ellipse', cx:60, cy:150, rx:12, ry:10},
+    {id:'elbow-r', label:'Elbow R', shape:'ellipse', cx:160, cy:150, rx:12, ry:10},
+    {id:'forearm-l', label:'Forearm L', shape:'rect', x:48, y:158, w:20, h:52, rx:10},
+    {id:'forearm-r', label:'Forearm R', shape:'rect', x:152, y:158, w:20, h:52, rx:10},
+    {id:'hand-l', label:'Hand L', shape:'ellipse', cx:58, cy:218, rx:13, ry:15},
+    {id:'hand-r', label:'Hand R', shape:'ellipse', cx:162, cy:218, rx:13, ry:15},
+    {id:'hip-l', label:'Hip L', shape:'rect', x:80, y:166, w:24, h:18, rx:8},
+    {id:'hip-r', label:'Hip R', shape:'rect', x:116, y:166, w:24, h:18, rx:8},
+    {id:'glute-l', label:'Glute L', shape:'rect', x:78, y:184, w:30, h:28, rx:10},
+    {id:'glute-r', label:'Glute R', shape:'rect', x:112, y:184, w:30, h:28, rx:10},
+    {id:'hamstring-l', label:'Hamstring L', shape:'rect', x:78, y:212, w:28, h:60, rx:10},
+    {id:'hamstring-r', label:'Hamstring R', shape:'rect', x:114, y:212, w:28, h:60, rx:10},
+    {id:'knee-l', label:'Knee L', shape:'ellipse', cx:92, cy:274, rx:15, ry:13},
+    {id:'knee-r', label:'Knee R', shape:'ellipse', cx:128, cy:274, rx:15, ry:13},
+    {id:'calf-l', label:'Calf L', shape:'rect', x:80, y:287, w:24, h:52, rx:8},
+    {id:'calf-r', label:'Calf R', shape:'rect', x:116, y:287, w:24, h:52, rx:8},
+    {id:'achilles-l', label:'Achilles L', shape:'rect', x:84, y:339, w:16, h:18, rx:6},
+    {id:'achilles-r', label:'Achilles R', shape:'rect', x:120, y:339, w:16, h:18, rx:6},
+    {id:'foot-l', label:'Foot L', shape:'ellipse', cx:92, cy:365, rx:16, ry:12},
+    {id:'foot-r', label:'Foot R', shape:'ellipse', cx:128, cy:365, rx:16, ry:12}
+  ]
+};
+
+function bodyMapSummaryText(bm){
+  const count = bm ? Object.keys(bm.front||{}).length + Object.keys(bm.back||{}).length : 0;
+  return count ? `Edit pain area (${count} marked)` : 'Mark pain/tightness area';
+}
+
+const BodyMap = {
+  view: 'front',
+  mode: 'tight',
+  state: { front:{}, back:{} },
+
+  open(existing){
+    this.state = existing ? JSON.parse(JSON.stringify(existing)) : { front:{}, back:{} };
+    if(!this.state.front) this.state.front = {};
+    if(!this.state.back) this.state.back = {};
+    this.view = 'front';
+    this.mode = 'tight';
+    const p = PLAYERS.find(x=>x.id===currentPlayerId);
+    document.getElementById('bodymap-player-name').textContent = p ? p.name+' · '+todayStr() : '—';
+    this.render();
+    Nav.go('screen-bodymap');
+  },
+
+  setMode(m){ this.mode = m; this.render(); },
+  setView(v){ this.view = v; this.render(); },
+
+  click(id, label){
+    const map = this.state[this.view];
+    if(map[id] === this.mode){ delete map[id]; toast(label+': unmarked'); }
+    else{ map[id] = this.mode; toast(label+': '+(this.mode==='tight'?'tightness':'pain')); }
+    this.render();
+  },
+
+  shapeEl(r){
+    const val = this.state[this.view][r.id];
+    const fill = val==='tight' ? '#f0904a' : val==='pain' ? '#ef4a5c' : '#1a2438';
+    const stroke = val ? (val==='tight' ? '#c96a2a' : '#c22e3f') : '#3a4560';
+    const lbl = r.label.replace(/'/g, "\\'");
+    const attrs = `data-id="${r.id}" fill="${fill}" stroke="${stroke}" stroke-width="1.5" style="cursor:pointer" onclick="BodyMap.click('${r.id}', '${lbl}')"`;
+    if(r.shape==='ellipse') return `<ellipse cx="${r.cx}" cy="${r.cy}" rx="${r.rx}" ry="${r.ry}" ${attrs}><title>${r.label}</title></ellipse>`;
+    return `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${r.rx}" ${attrs}><title>${r.label}</title></rect>`;
+  },
+
+  render(){
+    const regions = BODY_REGIONS[this.view];
+    const shapes = regions.map(r=>this.shapeEl(r)).join('');
+    const marked = [];
+    ['front','back'].forEach(v=>{
+      Object.keys(this.state[v]).forEach(id=>{
+        const region = BODY_REGIONS[v].find(rr=>rr.id===id);
+        if(region) marked.push({ view:v, label:region.label, type:this.state[v][id] });
+      });
+    });
+    const wrap = document.getElementById('bodymap-wrap');
+    wrap.innerHTML = `
+      <div class="card">
+        <div class="mode-toggle-row">
+          <button type="button" class="mode-btn ${this.mode==='tight'?'sel-tight':''}" onclick="BodyMap.setMode('tight')">🟠 Tightness</button>
+          <button type="button" class="mode-btn ${this.mode==='pain'?'sel-pain':''}" onclick="BodyMap.setMode('pain')">🔴 Pain</button>
+        </div>
+        <div class="view-tabs">
+          <button type="button" class="view-tab ${this.view==='front'?'active':''}" onclick="BodyMap.setView('front')">Front</button>
+          <button type="button" class="view-tab ${this.view==='back'?'active':''}" onclick="BodyMap.setView('back')">Back</button>
+        </div>
+        <div class="bodymap-svg-wrap">
+          <svg viewBox="0 0 220 390" style="width:100%;max-width:280px;display:block;margin:0 auto">${shapes}</svg>
+        </div>
+        <div class="bodymap-hint">Tap a body part to mark it. Tap again with the same color to unmark it.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Marked areas</div>
+        ${marked.length ? `<div class="chip-row">${marked.map(m=>`<div class="chip"><span class="legend-dot" style="background:${m.type==='tight'?'#f0904a':'#ef4a5c'}"></span>${m.label}${m.view==='back'?' (back)':''}</div>`).join('')}</div>` : '<div class="empty-state">No areas marked yet.</div>'}
+      </div>
+      <button class="save-btn" onclick="BodyMap.save()">✓ Save and continue</button>
+    `;
+  },
+
+  save(){
+    Entry.wellness.injury = true;
+    Entry.wellness.bodyMap = this.state;
+    Entry.renderWellness();
+    Nav.go('screen-wellness');
+  },
+  back(){
+    Nav.go('screen-wellness');
+    Entry.renderWellness();
+  }
+};
+
+/* ══════════════════ REPORTS ══════════════════ */
+const COACH_PIN = 'U21report';
+const Reports = {
+  scopePlayers: null, // null = full national squad; array = a club coach's assigned players only
+
+  players(){ return this.scopePlayers || PLAYERS; },
+
+  checkPin(){
+    const val = document.getElementById('pin-field').value;
+    if(val === COACH_PIN){
+      document.getElementById('pin-error').style.display='none';
+      document.getElementById('pin-field').value='';
+      this.scopePlayers = null;
+      this.playerId = PLAYERS[0].id;
+      document.getElementById('reports-title').textContent = '\ud83d\udcca Team Report';
+      this.switchTab('daily');
+      Nav.go('screen-reports');
+    } else {
+      document.getElementById('pin-error').style.display='block';
+    }
+  },
+
+  exit(){
+    this.scopePlayers = null;
+    Nav.go('screen-home');
+  },
+
+  dailyDate: todayStr(),
+  playerId: PLAYERS[0].id,
+
+  switchTab(tab){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    document.getElementById('rep-'+tab).classList.add('active');
+    if(tab==='daily') this.renderDaily();
+    if(tab==='player') this.renderPlayer();
+    if(tab==='team') this.renderTeam();
+  },
+
+  changeDailyDate(dir){
+    this.dailyDate = dir===0 ? todayStr() : shiftDate(this.dailyDate, dir);
+    this.renderDaily();
+  },
+
+  status(entry){
+    if(!entry) return 'none';
+    let bad=false, warn=false, any=false;
+    ['sleepQ','fatigue','soreness','mood'].forEach(k=>{
+      const v = entry[k];
+      if(v!=null){ any=true; if(v<=2) bad=true; else if(v===3) warn=true; }
+    });
+    if(entry.injury) bad=true;
+    if(entry.rpe!=null){ any=true; if(entry.rpe>=9) bad=true; else if(entry.rpe>=7) warn=true; }
+    if(!any) return 'none';
+    if(bad) return 'red';
+    if(warn) return 'yellow';
+    return 'green';
+  },
+
+  badgeCls(v){ return v==null?null:v>=5?'b-g1':v===4?'b-g2':v===3?'b-y':v===2?'b-o':'b-r'; },
+
+  badges(entry){
+    if(!entry) return '<span style="color:var(--muted-dim);font-size:11.5px">Not submitted</span>';
+    let html = '';
+    ['sleepQ','fatigue','soreness','mood'].forEach(v=>{
+      const val = entry[v];
+      if(val!=null) html += `<span class="badge ${this.badgeCls(val)}">${val}</span>`;
+    });
+    if(entry.sleepHours!=null) html += `<span class="badge b-p">${entry.sleepHours}h</span>`;
+    if(entry.rpe!=null) html += `<span class="badge" style="background:${rpeColor(entry.rpe)};color:#1a0f00">${entry.rpe}</span>`;
+    if(entry.injury) html += `<span class="badge b-r">🩹</span>`;
+    return html || '<span style="color:var(--muted-dim);font-size:11.5px">Not submitted</span>';
+  },
+
+  renderDaily(){
+    const wrap = document.getElementById('rep-daily');
+    const dateLabel = new Date(this.dailyDate+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    const players = this.players();
+    let wellnessCount=0, rpeCount=0, warnCount=0;
+    const rows = players.map(p=>{
+      const entry = findEntry(p.id, this.dailyDate);
+      const status = this.status(entry);
+      if(status==='red') warnCount++;
+      if(entry && ['sleepQ','fatigue','soreness','mood'].some(k=>entry[k]!=null)) wellnessCount++;
+      if(entry && entry.rpe!=null) rpeCount++;
+      const dotCls = status==='none'?'dot-none':status==='green'?'dot-green':status==='yellow'?'dot-yellow':'dot-red';
+      const borderCol = status==='red'?'var(--bad)':status==='yellow'?'var(--warn)':status==='green'?'var(--good)':'var(--border)';
+      const rpeTxt = entry && entry.rpe!=null ? entry.rpe+'/10' : '–';
+      const wellTxt = entry && ['sleepQ','fatigue','soreness','mood'].some(k=>entry[k]!=null) ? '✓' : '–';
+      return `<div class="player-row" style="border-left-color:${borderCol}">
+        <span class="status-dot ${dotCls}"></span>
+        <div class="pr-left">
+          <div class="pr-name">${p.name}</div>
+          <div class="pr-sub">Wellness ${wellTxt} · RPE ${rpeTxt}</div>
+        </div>
+        <div class="pr-badges">${this.badges(entry)}</div>
+      </div>`;
+    }).join('');
+    wrap.innerHTML = `
+      <div class="date-nav">
+        <button class="date-nav-btn" onclick="Reports.changeDailyDate(-1)">‹</button>
+        <div class="date-nav-label">${dateLabel}</div>
+        <button class="date-nav-btn" onclick="Reports.changeDailyDate(1)">›</button>
+      </div>
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-num" style="color:var(--accent)">${wellnessCount}/${players.length}</div><div class="stat-lbl">Wellness</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--purple)">${rpeCount}/${players.length}</div><div class="stat-lbl">RPE</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--bad)">${warnCount}</div><div class="stat-lbl">Alerts</div></div>
+      </div>
+      ${rows}
+    `;
+  },
+
+  scoreOf(entry){
+    if(!entry) return null;
+    const vals = ['sleepQ','fatigue','soreness','mood'].map(k=>entry[k]).filter(v=>v!=null);
+    if(!vals.length) return null;
+    return vals.reduce((a,b)=>a+b,0);
+  },
+
+  lineChart(entries, key, opts){
+    opts = opts || {};
+    const pts = entries.map(e=>({date:e.date, v:e[key]})).filter(p=>p.v!=null);
+    if(!pts.length) return '<div class="empty-state">No data.</div>';
+    const w=640, h=160, padL=30, padR=10, padT=14, padB=22;
+    const min = opts.min!=null ? opts.min : Math.min(...pts.map(p=>p.v));
+    const max = opts.max!=null ? opts.max : Math.max(...pts.map(p=>p.v));
+    const range = (max-min)||1;
+    const innerW = w-padL-padR, innerH = h-padT-padB;
+    const step = pts.length>1 ? innerW/(pts.length-1) : 0;
+    const xy = pts.map((p,i)=>({ x: padL + i*step, y: padT + innerH - ((p.v-min)/range)*innerH, v: p.v, date: p.date }));
+    const path = xy.map((p,i)=>(i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+    const areaPath = path + ` L${xy[xy.length-1].x.toFixed(1)},${(padT+innerH).toFixed(1)} L${xy[0].x.toFixed(1)},${(padT+innerH).toFixed(1)} Z`;
+    const color = opts.color || '#5b82f6';
+    const dots = xy.map(p=>{
+      const c = opts.pointColor ? opts.pointColor(p.v) : color;
+      return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${c}" stroke="#0a0f1c" stroke-width="1.5"/>`;
+    }).join('');
+    let avgLine = '';
+    if(opts.showAvg){
+      const avg = pts.reduce((a,b)=>a+b.v,0)/pts.length;
+      const ay = padT + innerH - ((avg-min)/range)*innerH;
+      avgLine = `<line x1="${padL}" y1="${ay.toFixed(1)}" x2="${w-padR}" y2="${ay.toFixed(1)}" stroke="#3d4763" stroke-width="1" stroke-dasharray="4,4"/>`;
+    }
+    const every = Math.max(1, Math.ceil(xy.length/6));
+    const labels = xy.map((p,i)=> i%every===0 ? `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="9" fill="#5c667f" text-anchor="middle" font-family="Inter,sans-serif">${shortDate(p.date)}</text>` : '').join('');
+    const yLabels = [min,(min+max)/2,max].map(v=>{
+      const y = padT + innerH - ((v-min)/range)*innerH;
+      return `<text x="${padL-6}" y="${(y+3).toFixed(1)}" font-size="9" fill="#5c667f" text-anchor="end" font-family="Inter,sans-serif">${Math.round(v*10)/10}</text>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block">
+      <path d="${areaPath}" fill="${color}" opacity="0.08"/>
+      ${yLabels}
+      <path d="${path}" fill="none" stroke="${color}" stroke-width="2.5"/>
+      ${dots}
+      ${avgLine}
+      ${labels}
+    </svg>`;
+  },
+
+  renderPlayer(){
+    const wrap = document.getElementById('rep-player');
+    const players = this.players();
+    if(!this.playerId || !players.find(p=>p.id===this.playerId)) this.playerId = players.length ? players[0].id : null;
+    if(!this.playerId){ wrap.innerHTML = '<div class="empty-state">No players assigned.</div>'; return; }
+    const entries = DATA[this.playerId].entries.slice().sort((a,b)=>a.date<b.date?-1:1);
+    const last = entries.length ? entries[entries.length-1] : null;
+    const lastScore = last ? this.scoreOf(last) : null;
+    const scoredEntries = entries.map(e=>Object.assign({}, e, {score: this.scoreOf(e)}));
+    const rpeEntries = entries.filter(e=>e.rpe!=null);
+    const sleepEntries = entries.filter(e=>e.sleepHours!=null);
+    const matchEntries = entries.filter(e=>e.minutes!=null);
+
+    wrap.innerHTML = `
+      <div class="select-wrap">
+        <label class="field-label" style="display:block;margin-bottom:6px">Player</label>
+        <select class="select-input" onchange="Reports.playerId=this.value;Reports.renderPlayer()">
+          ${players.map(pl=>`<option value="${pl.id}" ${pl.id===this.playerId?'selected':''}>${pl.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="card">
+        <div class="card-title">Last entry ${last ? '— '+last.date : ''}</div>
+        <div class="score-hero">
+          <span class="score-big">${lastScore!=null?lastScore:'—'}</span>
+          <span class="score-denom">/ 20 wellness score</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📈 Overall wellness score over time</div>
+        ${this.lineChart(scoredEntries, 'score', {min:0, max:20, color:'#5b82f6', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">⏱️ Sleep amount (hours)</div>
+        ${this.lineChart(sleepEntries, 'sleepHours', {min:0, max:11, color:'#a97ee8', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">🌙 Sleep quality</div>
+        ${this.lineChart(entries, 'sleepQ', {min:1, max:5, color:'#f0b83d', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">😴 Freshness</div>
+        ${this.lineChart(entries, 'fatigue', {min:1, max:5, color:'#f0904a', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">💪 Muscle readiness</div>
+        ${this.lineChart(entries, 'soreness', {min:1, max:5, color:'#ef4a5c', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">😊 Mood</div>
+        ${this.lineChart(entries, 'mood', {min:1, max:5, color:'#3ec281', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ RPE over time</div>
+        ${this.lineChart(rpeEntries, 'rpe', {min:1, max:10, color:'#a97ee8', pointColor:rpeColor})}
+        <div class="legend-row">
+          <span><span class="legend-dot" style="background:#3ec281"></span>1–2</span>
+          <span><span class="legend-dot" style="background:#7fd19a"></span>3–4</span>
+          <span><span class="legend-dot" style="background:#f0b83d"></span>5–6</span>
+          <span><span class="legend-dot" style="background:#f0904a"></span>7–8</span>
+          <span><span class="legend-dot" style="background:#ef4a5c"></span>9–10</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px">🏟️ Minutes played (matches)</div>
+        ${matchEntries.length ? `<div class="chip-row">${matchEntries.map(e=>`<div class="chip">${e.date}: <b>${e.minutes}′</b></div>`).join('')}</div>` : '<div class="empty-state">No minutes logged.</div>'}
+      </div>
+    `;
+  },
+
+  renderTeam(){
+    const wrap = document.getElementById('rep-team');
+    const players = this.players();
+    const rows = players.map(p=>{
+      const entries = DATA[p.id].entries;
+      const last = entries.length ? entries[entries.length-1] : null;
+      const score = last ? this.scoreOf(last) : null;
+      return {p, score};
+    }).sort((a,b)=>{
+      if(a.score==null) return 1;
+      if(b.score==null) return -1;
+      return a.score-b.score;
+    });
+    const barMax = 20;
+    const barsHtml = rows.map(r=>{
+      const pct = r.score!=null ? (r.score/barMax*100) : 0;
+      const color = r.score==null ? 'var(--border)' : r.score>=17?'var(--good)':r.score>=13?'var(--warn)':'var(--bad)';
+      return `<div class="bar-row">
+        <div class="bar-head"><span>${r.p.name}</span><span style="font-weight:800;font-variant-numeric:tabular-nums">${r.score!=null?r.score+'/20':'—'}</span></div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>`;
+    }).join('');
+
+    const allDates = new Set();
+    players.forEach(p=>DATA[p.id].entries.forEach(e=>allDates.add(e.date)));
+    const sortedDates = Array.from(allDates).sort();
+    const teamTrend = sortedDates.map(dk=>{
+      const scores = players.map(p=>{
+        const e = findEntry(p.id, dk);
+        return e ? this.scoreOf(e) : null;
+      }).filter(v=>v!=null);
+      const avg = scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
+      return {date:dk, teamAvg: avg};
+    }).filter(d=>d.teamAvg!=null);
+
+    const today = todayStr();
+    const submittedToday = players.filter(p=>findEntry(p.id, today)).length;
+    const redFlagsToday = players.filter(p=> this.status(findEntry(p.id, today))==='red').length;
+
+    wrap.innerHTML = `
+      <div class="stat-row">
+        <div class="stat-box"><div class="stat-num" style="color:var(--accent)">${submittedToday}/${players.length}</div><div class="stat-lbl">Submitted today</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--bad)">${redFlagsToday}</div><div class="stat-lbl">Alerts today</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--good)">${players.length}</div><div class="stat-lbl">Squad</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📈 Average team wellness score over time</div>
+        ${teamTrend.length ? this.lineChart(teamTrend, 'teamAvg', {min:0,max:20,color:'#5b82f6',showAvg:true}) : '<div class="empty-state">No data yet.</div>'}
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px">👥 Latest wellness score — all players</div>
+        ${barsHtml}
+      </div>
+    `;
+  }
+};
+
+/* ══════════════════ INIT ══════════════════ */
+renderPlayerList();
+</script>
