@@ -1224,6 +1224,11 @@ const Reports = {
     if(tab==='team') this.renderTeam();
   },
 
+  openPlayerReport(pid){
+    this.playerId = pid;
+    this.switchTab('player');
+  },
+
   changeDailyDate(dir){
     this.dailyDate = dir===0 ? todayStr() : shiftDate(this.dailyDate, dir);
     this.renderDaily();
@@ -1274,13 +1279,14 @@ const Reports = {
       const borderCol = status==='red'?'var(--bad)':status==='yellow'?'var(--warn)':status==='green'?'var(--good)':'var(--border)';
       const rpeTxt = entry && entry.rpe!=null ? entry.rpe+'/10' : '–';
       const wellTxt = entry && ['sleepQ','fatigue','soreness','mood'].some(k=>entry[k]!=null) ? '✓' : '–';
-      return `<div class="player-row" style="border-left-color:${borderCol}">
+      return `<div class="player-row" style="border-left-color:${borderCol};cursor:pointer" onclick="Reports.openPlayerReport('${p.id}')">
         <span class="status-dot ${dotCls}"></span>
         <div class="pr-left">
           <div class="pr-name">${p.name}</div>
           <div class="pr-sub">Wellness ${wellTxt} · RPE ${rpeTxt}</div>
         </div>
         <div class="pr-badges">${this.badges(entry)}</div>
+        <span class="name-chevron" style="margin-left:6px">›</span>
       </div>`;
     }).join('');
     document.getElementById('daily-stat-row').innerHTML = `
