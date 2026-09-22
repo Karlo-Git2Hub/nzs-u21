@@ -416,10 +416,20 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
     <div class="tab active" id="tab-daily" onclick="Reports.switchTab('daily')">Daily</div>
     <div class="tab" id="tab-player" onclick="Reports.switchTab('player')">By Player</div>
     <div class="tab" id="tab-team" onclick="Reports.switchTab('team')">Team</div>
+    <div class="tab" id="tab-gps" onclick="Reports.switchTab('gps')">GPS</div>
   </div>
-  <div class="tab-content active" id="rep-daily"></div>
+  <div class="tab-content active" id="rep-daily">
+    <div class="date-nav">
+      <button class="date-nav-btn" onclick="Reports.changeDailyDate(-1)">‹</button>
+      <div class="date-nav-label" id="daily-date-label">—</div>
+      <button class="date-nav-btn" onclick="Reports.changeDailyDate(1)">›</button>
+    </div>
+    <div id="daily-stat-row"></div>
+    <div id="daily-rows"></div>
+  </div>
   <div class="tab-content" id="rep-player"></div>
   <div class="tab-content" id="rep-team"></div>
+  <div class="tab-content" id="rep-gps"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -533,6 +543,66 @@ function syncEntryToSupabase(pid, dk){
   sb.from('entries').upsert(row).then(({error})=>{
     if(error){ console.error('Supabase save error', error); toast('Saved on this device, but sync to the shared database failed.'); }
   });
+}
+
+/* GPS tracker number -> player id. Filled in from the club's tracker assignment list.
+   Players not listed here have no tracker assigned and will show no GPS data. */
+const TRACKER_MAP = {
+  '1': 'nino-milic',
+  '2': 'mitja-ilenic',
+  '3': 'matej-malensek',
+  '4': 'marko-ristic',
+  '5': 'miha-matjasec',
+  '6': 'nejc-viher',
+  '7': 'lovro-golic',
+  '8': 'luka-topalovic',
+  '9': 'dino-kojic',
+  '10': 'tian-nai-koren',
+  '51': 'david-pejicic',
+  '52': 'kristjan-bendra',
+  '53': 'damir-zukic',
+  '54': 'relja-obric',
+  '55': 'niko-kasalo',
+  '56': 'aldin-jakupovic',
+  '57': 'matic-ivansek',
+  '58': 'markus-cimermancic',
+  '59': 'rok-storman',
+  '60': 'dominik-drobnic'
+};
+
+/* GPS session data, cached in the same shape as DATA: { [playerId]: { sessions: [] } } */
+let GPS_DATA = {};
+PLAYERS.forEach(p=>{ GPS_DATA[p.id] = { sessions: [] }; });
+
+function rowToGpsSession(row){
+  return {
+    date: row.date,
+    trackerId: row.tracker_id,
+    totalDistance: row.total_distance,
+    hsr: row.hsr,
+    sprintDistance: row.sprint_distance,
+    acc: row.acc,
+    dec: row.dec,
+    sprints: row.sprints,
+    maxSpeed: row.max_speed
+  };
+}
+
+async function loadAllGpsSessions(){
+  if(!sb) return;
+  try{
+    const { data, error } = await sb.from('gps_sessions').select('*');
+    if(error){ console.error('Supabase GPS load error', error); return; }
+    const fresh = {};
+    PLAYERS.forEach(p=>{ fresh[p.id] = { sessions: [] }; });
+    (data||[]).forEach(row=>{
+      const pid = row.player_id;
+      if(!pid || !fresh[pid]) return;
+      fresh[pid].sessions.push(rowToGpsSession(row));
+    });
+    Object.keys(fresh).forEach(pid=> fresh[pid].sessions.sort((a,b)=> a.date<b.date?-1:a.date>b.date?1:0));
+    GPS_DATA = fresh;
+  }catch(e){ console.error('Supabase GPS load failed', e); }
 }
 
 /* ══════════════════ NAV ══════════════════ */
@@ -1004,6 +1074,27 @@ function bodyMapSummaryText(bm){
   return count ? `Edit pain area (${count} marked)` : 'Mark pain/tightness area';
 }
 
+/* Resolves a stored bodyMap {front:{regionId:'tight'|'pain'}, back:{...}} into a list of
+   {label, type, view} for display in reports. */
+function bodyMapAreaList(bm){
+  if(!bm) return [];
+  const out = [];
+  ['front','back'].forEach(view=>{
+    const marks = bm[view] || {};
+    Object.keys(marks).forEach(id=>{
+      const region = (BODY_REGIONS[view]||[]).find(r=>r.id===id);
+      out.push({ label: region ? region.label : id, type: marks[id], view });
+    });
+  });
+  return out;
+}
+
+function bodyMapAreaChips(bm){
+  const list = bodyMapAreaList(bm);
+  if(!list.length) return '';
+  return `<div class="chip-row">${list.map(m=>`<div class="chip"><span class="legend-dot" style="background:${m.type==='tight'?'#f0904a':'#ef4a5c'}"></span>${m.label}${m.view==='back'?' (back)':''}</div>`).join('')}</div>`;
+}
+
 const BodyMap = {
   view: 'front',
   mode: 'tight',
@@ -1122,6 +1213,11 @@ const Reports = {
     document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
     document.getElementById('tab-'+tab).classList.add('active');
     document.getElementById('rep-'+tab).classList.add('active');
+    if(tab==='gps'){
+      await loadAllGpsSessions();
+      this.renderGps();
+      return;
+    }
     await loadAllEntries(); // pull the latest shared data before showing the report
     if(tab==='daily') this.renderDaily();
     if(tab==='player') this.renderPlayer();
@@ -1164,8 +1260,8 @@ const Reports = {
   },
 
   renderDaily(){
-    const wrap = document.getElementById('rep-daily');
-    const dateLabel = new Date(this.dailyDate+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+    document.getElementById('daily-date-label').textContent =
+      new Date(this.dailyDate+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
     const players = this.players();
     let wellnessCount=0, rpeCount=0, warnCount=0;
     const rows = players.map(p=>{
@@ -1187,19 +1283,13 @@ const Reports = {
         <div class="pr-badges">${this.badges(entry)}</div>
       </div>`;
     }).join('');
-    wrap.innerHTML = `
-      <div class="date-nav">
-        <button class="date-nav-btn" onclick="Reports.changeDailyDate(-1)">‹</button>
-        <div class="date-nav-label">${dateLabel}</div>
-        <button class="date-nav-btn" onclick="Reports.changeDailyDate(1)">›</button>
-      </div>
+    document.getElementById('daily-stat-row').innerHTML = `
       <div class="stat-row">
         <div class="stat-box"><div class="stat-num" style="color:var(--accent)">${wellnessCount}/${players.length}</div><div class="stat-lbl">Wellness</div></div>
         <div class="stat-box"><div class="stat-num" style="color:var(--purple)">${rpeCount}/${players.length}</div><div class="stat-lbl">RPE</div></div>
         <div class="stat-box"><div class="stat-num" style="color:var(--bad)">${warnCount}</div><div class="stat-lbl">Alerts</div></div>
-      </div>
-      ${rows}
-    `;
+      </div>`;
+    document.getElementById('daily-rows').innerHTML = rows;
   },
 
   scoreOf(entry){
@@ -1213,7 +1303,7 @@ const Reports = {
     opts = opts || {};
     const pts = entries.map(e=>({date:e.date, v:e[key]})).filter(p=>p.v!=null);
     if(!pts.length) return '<div class="empty-state">No data.</div>';
-    const w=640, h=160, padL=30, padR=10, padT=14, padB=22;
+    const w=640, h=190, padL=38, padR=10, padT=26, padB=26;
     const min = opts.min!=null ? opts.min : Math.min(...pts.map(p=>p.v));
     const max = opts.max!=null ? opts.max : Math.max(...pts.map(p=>p.v));
     const range = (max-min)||1;
@@ -1225,8 +1315,16 @@ const Reports = {
     const color = opts.color || '#5b82f6';
     const dots = xy.map(p=>{
       const c = opts.pointColor ? opts.pointColor(p.v) : color;
-      return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.5" fill="${c}" stroke="#0a0f1c" stroke-width="1.5"/>`;
+      return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4.5" fill="${c}" stroke="#0a0f1c" stroke-width="2"/>`;
     }).join('');
+    // show the actual value above/below each point so scores are easy to read at a glance
+    const showValues = xy.length <= 16;
+    const valueLabels = showValues ? xy.map(p=>{
+      const above = p.y > padT+16;
+      const ty = above ? p.y-10 : p.y+18;
+      const vTxt = Number.isInteger(p.v) ? p.v : (Math.round(p.v*10)/10);
+      return `<text x="${p.x.toFixed(1)}" y="${ty.toFixed(1)}" font-size="13" font-weight="800" fill="#eef1f7" text-anchor="middle" font-family="Sora,Inter,sans-serif">${vTxt}</text>`;
+    }).join('') : '';
     let avgLine = '';
     if(opts.showAvg){
       const avg = pts.reduce((a,b)=>a+b.v,0)/pts.length;
@@ -1234,10 +1332,10 @@ const Reports = {
       avgLine = `<line x1="${padL}" y1="${ay.toFixed(1)}" x2="${w-padR}" y2="${ay.toFixed(1)}" stroke="#3d4763" stroke-width="1" stroke-dasharray="4,4"/>`;
     }
     const every = Math.max(1, Math.ceil(xy.length/6));
-    const labels = xy.map((p,i)=> i%every===0 ? `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="9" fill="#5c667f" text-anchor="middle" font-family="Inter,sans-serif">${shortDate(p.date)}</text>` : '').join('');
+    const labels = xy.map((p,i)=> i%every===0 ? `<text x="${p.x.toFixed(1)}" y="${h-6}" font-size="11.5" font-weight="600" fill="#8892a8" text-anchor="middle" font-family="Inter,sans-serif">${shortDate(p.date)}</text>` : '').join('');
     const yLabels = [min,(min+max)/2,max].map(v=>{
       const y = padT + innerH - ((v-min)/range)*innerH;
-      return `<text x="${padL-6}" y="${(y+3).toFixed(1)}" font-size="9" fill="#5c667f" text-anchor="end" font-family="Inter,sans-serif">${Math.round(v*10)/10}</text>`;
+      return `<text x="${padL-8}" y="${(y+4).toFixed(1)}" font-size="13" font-weight="700" fill="#8892a8" text-anchor="end" font-family="Inter,sans-serif">${Math.round(v*10)/10}</text>`;
     }).join('');
     return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block">
       <path d="${areaPath}" fill="${color}" opacity="0.08"/>
@@ -1246,6 +1344,7 @@ const Reports = {
       ${dots}
       ${avgLine}
       ${labels}
+      ${valueLabels}
     </svg>`;
   },
 
@@ -1261,6 +1360,7 @@ const Reports = {
     const rpeEntries = entries.filter(e=>e.rpe!=null);
     const sleepEntries = entries.filter(e=>e.sleepHours!=null);
     const matchEntries = entries.filter(e=>e.minutes!=null);
+    const injuryEntries = entries.filter(e=>e.injury===true).slice().reverse();
 
     wrap.innerHTML = `
       <div class="select-wrap">
@@ -1314,6 +1414,81 @@ const Reports = {
       <div class="card">
         <div class="card-title" style="margin-bottom:10px">🏟️ Minutes played (matches)</div>
         ${matchEntries.length ? `<div class="chip-row">${matchEntries.map(e=>`<div class="chip">${e.date}: <b>${e.minutes}′</b></div>`).join('')}</div>` : '<div class="empty-state">No minutes logged.</div>'}
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:10px">🩹 Marked pain / tightness areas</div>
+        ${injuryEntries.length ? injuryEntries.map(e=>`
+          <div style="margin-bottom:12px">
+            <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:6px">${e.date}</div>
+            ${bodyMapAreaChips(e.bodyMap) || '<div style="font-size:12px;color:var(--muted-dim)">Marked pain/tightness, no area specified.</div>'}
+          </div>`).join('') : '<div class="empty-state">No pain or tightness reported.</div>'}
+      </div>
+    `;
+  },
+
+  gpsPlayerId: null,
+
+  renderGps(){
+    const wrap = document.getElementById('rep-gps');
+    const players = this.players().filter(p=>Object.values(TRACKER_MAP).includes(p.id));
+    if(!players.length){
+      wrap.innerHTML = '<div class="empty-state">No GPS tracker assigned to your players yet.</div>';
+      return;
+    }
+    if(!this.gpsPlayerId || !players.find(p=>p.id===this.gpsPlayerId)) this.gpsPlayerId = players[0].id;
+    const sessions = (GPS_DATA[this.gpsPlayerId] ? GPS_DATA[this.gpsPlayerId].sessions : []).slice();
+    const last = sessions.length ? sessions[sessions.length-1] : null;
+
+    const statRow = (label, val, unit) => `
+      <div class="stat-box"><div class="stat-num" style="color:var(--accent)">${val!=null?val:'—'}${val!=null&&unit?' '+unit:''}</div><div class="stat-lbl">${label}</div></div>`;
+
+    wrap.innerHTML = `
+      <div class="select-wrap">
+        <label class="field-label" style="display:block;margin-bottom:6px">Player</label>
+        <select class="select-input" onchange="Reports.gpsPlayerId=this.value;Reports.renderGps()">
+          ${players.map(pl=>`<option value="${pl.id}" ${pl.id===this.gpsPlayerId?'selected':''}>${pl.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="card">
+        <div class="card-title">Last session ${last ? '— '+last.date : ''}</div>
+        <div class="stat-row">
+          ${statRow('Total dist.', last?last.totalDistance:null, 'm')}
+          ${statRow('HSR', last?last.hsr:null, 'm')}
+          ${statRow('Sprint dist.', last?last.sprintDistance:null, 'm')}
+        </div>
+        <div class="stat-row">
+          ${statRow('Accel.', last?last.acc:null, '')}
+          ${statRow('Decel.', last?last.dec:null, '')}
+          ${statRow('Sprints', last?last.sprints:null, '')}
+        </div>
+        <div class="stat-row">
+          ${statRow('Max speed', last?last.maxSpeed:null, 'km/h')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📏 Total distance</div>
+        ${this.lineChart(sessions, 'totalDistance', {color:'#5b82f6', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">🏃 High-speed running (HSR)</div>
+        ${this.lineChart(sessions, 'hsr', {color:'#f0904a', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">💨 Sprint distance</div>
+        ${this.lineChart(sessions, 'sprintDistance', {color:'#ef4a5c', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ Sprints (count, >25.2 km/h)</div>
+        ${this.lineChart(sessions, 'sprints', {color:'#a97ee8', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">🔼 Accelerations / 🔽 Decelerations</div>
+        ${this.lineChart(sessions, 'acc', {color:'#3ec281', showAvg:true})}
+        ${this.lineChart(sessions, 'dec', {color:'#ef4a5c', showAvg:true})}
+      </div>
+      <div class="card">
+        <div class="card-title">🚀 Max speed</div>
+        ${this.lineChart(sessions, 'maxSpeed', {color:'#f0b83d', showAvg:true})}
       </div>
     `;
   },
