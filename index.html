@@ -1,6 +1,7 @@
 <title>NZSU21 Wellness</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -604,6 +605,94 @@ async function loadAllGpsSessions(){
     GPS_DATA = fresh;
   }catch(e){ console.error('Supabase GPS load failed', e); }
 }
+
+/* ══════════════════ GPS EXCEL IMPORT ══════════════════ */
+const GpsImport = {
+  findCol(headers, test){
+    for(let i=0;i<headers.length;i++){
+      const h = (headers[i]==null ? '' : String(headers[i])).trim().toLowerCase();
+      if(test(h)) return i;
+    }
+    return -1;
+  },
+
+  async handleFile(evt){
+    const file = evt.target.files && evt.target.files[0];
+    const statusEl = document.getElementById('gps-upload-status');
+    evt.target.value = ''; // allow re-selecting the same file later
+    if(!file) return;
+    if(!window.XLSX){ statusEl.textContent = 'Excel reader failed to load. Check your connection and try again.'; return; }
+    if(!sb){ statusEl.textContent = 'Not connected to the shared database.'; return; }
+    statusEl.textContent = 'Reading ' + file.name + '…';
+    try{
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, {type:'array', cellDates:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:null, raw:true});
+      if(!rows.length){ statusEl.textContent = 'The file appears to be empty.'; return; }
+      const headers = rows[0];
+      const dateIdx = this.findCol(headers, h=>h.includes('date'));
+      const athleteIdx = this.findCol(headers, h=>h==='athlete');
+      const ttdIdx = this.findCol(headers, h=>h.includes('ttd'));
+      const hsrIdx = this.findCol(headers, h=>h.includes('hsr'));
+      const sprintIdx = this.findCol(headers, h=>h==='sprint');
+      const decIdx = this.findCol(headers, h=>h.includes('dec'));
+      const accIdx = this.findCol(headers, h=>h.includes('acc'));
+      const maxSpeedIdx = this.findCol(headers, h=>h.includes('max speed'));
+      const sprintsCountIdx = this.findCol(headers, h=>h.includes('speed events'));
+      if(dateIdx===-1 || athleteIdx===-1){
+        statusEl.textContent = 'Could not find "start date/time" or "athlete" columns in this file.';
+        return;
+      }
+      const out = [];
+      const unmapped = new Set();
+      for(let r=1;r<rows.length;r++){
+        const row = rows[r];
+        if(!row || row[dateIdx]==null || row[athleteIdx]==null) break; // hit the blank row before the zones legend
+        const dv = row[dateIdx];
+        const dateStr = (dv instanceof Date) ? dv.toISOString().slice(0,10) : String(dv).slice(0,10);
+        const athlete = String(row[athleteIdx]).trim();
+        const parts = athlete.split(/\s+/);
+        const tracker = parts[parts.length-1];
+        const pid = TRACKER_MAP[tracker];
+        if(!pid){ unmapped.add(tracker+' ('+athlete+')'); continue; }
+        out.push({
+          id: pid+'_'+dateStr,
+          date: dateStr,
+          tracker_id: tracker,
+          player_id: pid,
+          total_distance: ttdIdx>-1 ? row[ttdIdx] : null,
+          hsr: hsrIdx>-1 ? row[hsrIdx] : null,
+          sprint_distance: sprintIdx>-1 ? row[sprintIdx] : null,
+          acc: accIdx>-1 ? row[accIdx] : null,
+          dec: decIdx>-1 ? row[decIdx] : null,
+          sprints: sprintsCountIdx>-1 ? row[sprintsCountIdx] : null,
+          max_speed: maxSpeedIdx>-1 ? row[maxSpeedIdx] : null
+        });
+      }
+      if(!out.length){
+        statusEl.textContent = 'No matching player rows found in this file.';
+        return;
+      }
+      statusEl.textContent = 'Saving ' + out.length + ' sessions…';
+      const { error } = await sb.from('gps_sessions').upsert(out);
+      if(error){
+        console.error('GPS upload error', error);
+        statusEl.textContent = 'Upload failed: ' + error.message;
+        return;
+      }
+      let msg = '✓ Saved ' + out.length + ' player sessions from ' + file.name + '.';
+      if(unmapped.size) msg += ' Unmapped trackers (no player assigned): ' + Array.from(unmapped).join(', ') + '.';
+      statusEl.textContent = msg;
+      toast('GPS data saved.');
+      await loadAllGpsSessions();
+      Reports.renderGps();
+    }catch(e){
+      console.error('GPS import failed', e);
+      statusEl.textContent = 'Something went wrong reading this file: ' + e.message;
+    }
+  }
+};
 
 /* ══════════════════ NAV ══════════════════ */
 function afterSaveScreen(){ return entryOrigin==='screen-coach-players' ? 'screen-coach-players' : 'screen-home'; }
@@ -1436,9 +1525,17 @@ const Reports = {
 
   renderGps(){
     const wrap = document.getElementById('rep-gps');
+    const uploadCard = `
+      <div class="card">
+        <div class="card-title">⬆️ Upload GPS session (.xlsx)</div>
+        <div class="field-scale-hint" style="margin-bottom:12px">Upload the tracker export after each training/match. Players are matched automatically by tracker number.</div>
+        <input type="file" accept=".xlsx" id="gps-file-input" style="display:none" onchange="GpsImport.handleFile(event)">
+        <button type="button" class="big-btn primary" style="margin-bottom:0" onclick="document.getElementById('gps-file-input').click()">📁&nbsp; Choose Excel file</button>
+        <div id="gps-upload-status" style="margin-top:10px;font-size:12.5px;color:var(--muted)"></div>
+      </div>`;
     const players = this.players().filter(p=>Object.values(TRACKER_MAP).includes(p.id));
     if(!players.length){
-      wrap.innerHTML = '<div class="empty-state">No GPS tracker assigned to your players yet.</div>';
+      wrap.innerHTML = uploadCard + '<div class="empty-state">No GPS tracker assigned to your players yet.</div>';
       return;
     }
     if(!this.gpsPlayerId || !players.find(p=>p.id===this.gpsPlayerId)) this.gpsPlayerId = players[0].id;
@@ -1449,6 +1546,7 @@ const Reports = {
       <div class="stat-box"><div class="stat-num" style="color:var(--accent)">${val!=null?val:'—'}${val!=null&&unit?' '+unit:''}</div><div class="stat-lbl">${label}</div></div>`;
 
     wrap.innerHTML = `
+      ${uploadCard}
       <div class="select-wrap">
         <label class="field-label" style="display:block;margin-bottom:6px">Player</label>
         <select class="select-input" onchange="Reports.gpsPlayerId=this.value;Reports.renderGps()">
