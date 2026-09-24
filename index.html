@@ -1,3 +1,4 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
 <title>NZSU21 Wellness</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -375,7 +376,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <!-- ══ CLUB COACH — PLAYER LIST ══ -->
 <div id="screen-coach-players" class="screen">
   <div class="appbar">
-    <button class="appbar-back" onclick="Nav.go('screen-coach-email')">←</button>
+    <button class="appbar-back" onclick="CoachAuth.backFromPlayers()">←</button>
     <div class="appbar-titles"><div class="appbar-title">Your players</div></div>
   </div>
   <div class="wrap wrap-narrow">
@@ -411,6 +412,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
 <div id="screen-reports" class="screen">
   <div class="appbar">
     <div class="appbar-titles"><div class="appbar-title" id="reports-title">📊 Team Report</div></div>
+    <button class="appbar-exit" id="coach-log-btn" style="display:none" onclick="CoachAuth.goLogData()">📝&nbsp;Log data</button>
     <button class="appbar-exit" onclick="Reports.exit()">Exit</button>
   </div>
   <div class="tabs">
@@ -451,6 +453,7 @@ const PLAYER_NAMES = [
   'Leo Rimac','Miha Matjašec','Lovro Golič','Rok Štorman','Nino Milić','Damir Zukić',
   'Mitja Ilenič','Aldin Jakupović','Matej Malenšek','Jaka Zrnec','Matic Ivanšek','Nejc Viher',
   'Dominik Drobnič','Markus Cimermančič','Žan Mauricio','Kristjan Bendra','Dino Kojić','Marko Ristić',
+  'Kenan Kurtović',
   'Karlo Gračner','Miha Magdič'
 ];
 
@@ -517,7 +520,8 @@ function todayStr(){
   return d.toISOString().slice(0,10);
 }
 function shortDate(dk){ const d = new Date(dk+'T00:00:00'); return d.getDate()+'.'+(d.getMonth()+1)+'.'; }
-function shiftDate(dk, days){ const d = new Date(dk+'T00:00:00'); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+function localKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function shiftDate(dk, days){ const [y,m,dd] = dk.split('-').map(Number); const d = new Date(y, m-1, dd+days, 12); return localKey(d); }
 function findEntry(pid, dk){ return DATA[pid].entries.find(e=>e.date===dk); }
 
 function upsertEntry(pid, dk, patch){
@@ -749,6 +753,7 @@ const BIRTHDATES = {
   'kristjan-bendra': '30/01/2006',
   'dino-kojic': '04/04/2005',
   'marko-ristic': '01/11/2004',
+  'kenan-kurtovic': '18/01/2007',
   'karlo-gracner': '06/06/1993',
   'miha-magdic': '18/10/1995'
 };
@@ -758,7 +763,28 @@ PLAYERS.forEach(p=>{ if(!(p.id in BIRTHDATES)) BIRTHDATES[p.id] = null; });
    log data for and see reports on. Filled in manually by the national coach as
    access is handed out. Example: 'coach@fckoper.si': ['player-id-1','player-id-2'] */
 const CLUB_COACHES = {
+  'd.losi1986@gmail.com': ['relja-obric'],
+  'rastovich@hotmail.it': ['luka-topalovic'],
+  'sander.denolf@clubbrugge.be': ['tian-nai-koren'],
+  'dejan.novak86@gmail.com': ['niko-kasalo', 'kenan-kurtovic'],
+  'rickyhenry@fcgroningen.nl': ['lovro-stubljar'],
+  'durso.andrea@virgilio.it': ['david-pejicic'],
+  'julian.lemke@fc-liefering.at': ['miha-matjasec'],
+  'performance@helmondsport.nl': ['lovro-golic'],
+  'pieter.jacobs@kvk.be': ['rok-storman'],
+  'shemrok@seznam.cz': ['nino-milic'],
+  'francesco.maurello_ct@acmilan.com': ['damir-zukic'],
+  'nick.segers@nycfc.com': ['mitja-ilenic'],
+  'darjan.sustar@gmail.com': ['aldin-jakupovic', 'matej-malensek'],
+  'alen.fizio@gmail.com': ['matic-ivansek'],
+  'zorec.zoki@gmail.com': ['nejc-viher'],
+  's.wilson5991@gmail.com': ['dominik-drobnic'],
+  'shaines@torontofc.ca': ['markus-cimermancic'],
+  'hgsgoncalves@gmail.com': ['zan-mauricio'],
+  'azberibic98@gmail.com': ['kristjan-bendra', 'dino-kojic', 'marko-ristic']
 };
+/* National coach's own email: full access to every player, kept in sync with the PLAYERS list. */
+CLUB_COACHES['karlo.gracner@nzs.si'] = PLAYERS.map(p=>p.id);
 
 const CoachAuth = {
   email: null,
@@ -774,7 +800,17 @@ const CoachAuth = {
     this.email = val;
     this.players = ids.map(id=>PLAYERS.find(p=>p.id===id)).filter(Boolean);
     this.renderPlayerList();
+    this.viewReports(); // land on the report, not the data-entry list
+  },
+
+  goLogData(){
+    this.renderPlayerList();
     Nav.go('screen-coach-players');
+  },
+
+  backFromPlayers(){
+    if(Reports.scopePlayers){ Nav.go('screen-reports'); }
+    else{ Nav.go('screen-coach-email'); }
   },
 
   renderPlayerList(){
@@ -812,7 +848,8 @@ const CoachAuth = {
     Reports.scopePlayers = this.players;
     Reports.playerId = this.players.length ? this.players[0].id : null;
     Reports.dailyDate = todayStr();
-    document.getElementById('reports-title').textContent = '\ud83d\udcca My Players — Report';
+    document.getElementById('reports-title').textContent = '\ud83d\udcca Team Report';
+    document.getElementById('coach-log-btn').style.display = 'inline-block';
     Reports.switchTab('daily');
     Nav.go('screen-reports');
   }
@@ -1282,6 +1319,7 @@ const Reports = {
       this.scopePlayers = null;
       this.playerId = PLAYERS[0].id;
       document.getElementById('reports-title').textContent = '\ud83d\udcca Team Report';
+      document.getElementById('coach-log-btn').style.display = 'none';
       this.switchTab('daily');
       Nav.go('screen-reports');
     } else {
@@ -1291,6 +1329,7 @@ const Reports = {
 
   exit(){
     this.scopePlayers = null;
+    document.getElementById('coach-log-btn').style.display = 'none';
     Nav.go('screen-home');
   },
 
@@ -1525,7 +1564,7 @@ const Reports = {
 
   renderGps(){
     const wrap = document.getElementById('rep-gps');
-    const uploadCard = `
+    const uploadCard = this.scopePlayers ? '' : `
       <div class="card">
         <div class="card-title">⬆️ Upload GPS session (.xlsx)</div>
         <div class="field-scale-hint" style="margin-bottom:12px">Upload the tracker export after each training/match. Players are matched automatically by tracker number.</div>
@@ -1658,3 +1697,5 @@ const Reports = {
 renderPlayerList();
 loadAllEntries(); // pull shared data from Supabase in the background; screens that need it re-fetch on open
 </script>
+
+</body></html>
