@@ -310,6 +310,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid 
       <div class="card-title">What would you like to submit?</div>
       <button class="big-btn primary" onclick="Entry.openWellness()">🌙&nbsp; Morning wellness check-in</button>
       <button class="big-btn secondary" onclick="Entry.openRpe()">⚡&nbsp; Rate of perceived exertion (RPE)</button>
+      <button class="big-btn secondary" onclick="Reports.openForPlayer(currentPlayerId)">📊&nbsp; My results</button>
     </div>
   </div>
 </div>
@@ -669,7 +670,9 @@ const GpsImport = {
         const dateStr = (dv instanceof Date) ? dv.toISOString().slice(0,10) : String(dv).slice(0,10);
         const athlete = String(row[athleteIdx]).trim();
         const parts = athlete.split(/\s+/);
-        const tracker = parts[parts.length-1];
+        // Tracker label formats seen: 'LIVE6 6', 'ST 59', '6 ŠT6' — try last token, its digits, then first token.
+        const cands = [parts[parts.length-1], (parts[parts.length-1].match(/\d+$/)||[''])[0], parts[0]];
+        const tracker = cands.find(c=>TRACKER_MAP[c]) || parts[parts.length-1];
         const pid = TRACKER_MAP[tracker];
         if(!pid){ unmapped.add(tracker+' ('+athlete+')'); continue; }
         out.push({
@@ -861,7 +864,7 @@ const CoachAuth = {
     Reports.playerId = this.players.length ? this.players[0].id : null;
     Reports.dailyDate = todayStr();
     document.getElementById('reports-title').textContent = '\ud83d\udcca Team Report';
-    document.getElementById('coach-log-btn').style.display = 'inline-block';
+    Reports.setMode('coach');
     Reports.switchTab('daily');
     Nav.go('screen-reports');
   }
@@ -1331,7 +1334,7 @@ const Reports = {
       this.scopePlayers = null;
       this.playerId = PLAYERS[0].id;
       document.getElementById('reports-title').textContent = '\ud83d\udcca Team Report';
-      document.getElementById('coach-log-btn').style.display = 'none';
+      this.setMode('national');
       this.switchTab('daily');
       Nav.go('screen-reports');
     } else {
@@ -1339,7 +1342,30 @@ const Reports = {
     }
   },
 
+  setMode(mode){
+    // mode: 'national' | 'coach' | 'player'
+    this.mode = mode;
+    document.getElementById('tab-team').style.display = mode==='player' ? 'none' : '';
+    document.getElementById('coach-log-btn').style.display = mode==='coach' ? 'inline-block' : 'none';
+  },
+
+  openForPlayer(pid){
+    const p = PLAYERS.find(x=>x.id===pid);
+    if(!p) return;
+    this.scopePlayers = [p];
+    this.playerId = pid; this.gpsPlayerId = pid; this.weeklyPlayerId = pid;
+    this.dailyDate = todayStr();
+    document.getElementById('reports-title').textContent = '\ud83d\udcca '+p.name;
+    this.setMode('player');
+    this.switchTab('player');
+    Nav.go('screen-reports');
+  },
+
   exit(){
+    if(this.mode==='player'){
+      this.scopePlayers = null; this.setMode('national');
+      Nav.go('screen-entry-menu'); return;
+    }
     this.scopePlayers = null;
     document.getElementById('coach-log-btn').style.display = 'none';
     Nav.go('screen-home');
