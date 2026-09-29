@@ -585,7 +585,7 @@ const TRACKER_MAP = {
   '57': 'matic-ivansek',
   '58': 'markus-cimermancic',
   '59': 'rok-storman',
-  '60': 'dominik-drobnic'
+  '60': 'kenan-kurtovic'
 };
 
 /* GPS session data, cached in the same shape as DATA: { [playerId]: { sessions: [] } } */
@@ -1455,7 +1455,7 @@ const Reports = {
         <span class="status-dot ${dotCls}"></span>
         <div class="pr-left">
           <div class="pr-name">${p.name}</div>
-          <div class="pr-sub">Wellness ${wellTxt} · RPE ${rpeTxt}</div>
+          <div class="pr-sub">Wellness ${wellTxt} · RPE ${rpeTxt}${sessionNote(p.id, this.dailyDate) ? ` · <b style="color:var(--warn)">${sessionNote(p.id, this.dailyDate).label}</b>` : ''}</div>
         </div>
         <div class="pr-badges">${this.badges(entry)}</div>
         <span class="name-chevron" style="margin-left:6px">›</span>
@@ -1664,6 +1664,7 @@ const Reports = {
           </table>
         </div>
       </div>
+      ${d.notes.length ? `<div class="card"><div class="card-title" style="margin-bottom:10px">📝 Session notes</div>${d.notes.map(n=>`<div style="margin-bottom:10px"><div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:3px">${dayHead(n.dk)}</div><div style="font-size:13px">${n.text}</div></div>`).join('')}</div>` : ''}
       <div class="card">
         <div class="card-title" style="margin-bottom:10px">🩹 Pain / tightness this week</div>
         ${painRows || '<div class="empty-state">No pain or tightness reported.</div>'}
@@ -1815,6 +1816,24 @@ const REPORT_WEEKS = [
     available:'Friday 2 October 2026 (evening, after the second match)' }
 ];
 
+/* Per-player session labels set by the national coach, shown instead of Training/Match.
+   { 'YYYY-MM-DD': { playerId: { label: short label for tables, note: full explanation } } } */
+const SESSION_NOTES = {
+  '2026-09-29': {
+    'damir-zukic':        { label:'Top-up', note:'Match day vs Israel – did not play; top-up session only. Load compensated on 30 Sep.' },
+    'relja-obric':        { label:'Top-up', note:'Match day vs Israel – did not play; top-up session only. Load compensated on 30 Sep.' },
+    'markus-cimermancic': { label:'Top-up', note:'Match day vs Israel – did not play; top-up session only. Load compensated on 30 Sep.' },
+    'aldin-jakupovic':    { label:'Match + TU', note:'Match vs Israel – a few minutes played (~10′) + top-up. Load compensated on 30 Sep.' }
+  },
+  '2026-09-30': {
+    'damir-zukic':        { label:'Compens.', note:'Compensation session (after top-up on match day 29 Sep).' },
+    'relja-obric':        { label:'Compens.', note:'Compensation session (after top-up on match day 29 Sep).' },
+    'markus-cimermancic': { label:'Compens.', note:'Compensation session (after top-up on match day 29 Sep).' },
+    'aldin-jakupovic':    { label:'Compens.', note:'Compensation session (after limited minutes + top-up on match day 29 Sep).' }
+  }
+};
+function sessionNote(pid, dk){ return (SESSION_NOTES[dk] && SESSION_NOTES[dk][pid]) || null; }
+
 function weekDays(week){
   const out = []; let d = week.start;
   while(d <= week.end){ out.push(d); d = shiftDate(d, 1); }
@@ -1870,9 +1889,14 @@ function weeklyData(pid, week){
     const total = p.total && present.length ? present.reduce((a,b)=>a+b,0) : null;
     return { p, vals, avg, total };
   });
-  const activity = rows.map(r=> r.e && r.e.rpe!=null ? (r.e.activity==='tekma' ? 'Match' : 'Training') : null);
+  const activity = rows.map(r=>{
+    const n = sessionNote(pid, r.dk);
+    if(n) return n.label;
+    return r.e && r.e.rpe!=null ? (r.e.activity==='tekma' ? 'Match' : 'Training') : null;
+  });
+  const notes = rows.map(r=> sessionNote(pid, r.dk)).map((n,i)=> n ? { dk: days[i], text: n.note } : null).filter(Boolean);
   const pain = rows.map(r=> r.e && r.e.injury===true ? bodyMapAreaList(r.e.bodyMap) : null);
-  return { days, rows, params, activity, pain };
+  return { days, rows, params, activity, pain, notes };
 }
 
 function fmtVal(v, dec){
@@ -2083,6 +2107,18 @@ const WeeklyPDF = {
     y += 15;
     y = this.overview(doc, d, y);
     y = this.painBlock(doc, d, y);
+    if(d.notes.length){
+      y += 9;
+      this.text(doc, 'Session notes', 14, y, { bold:true, size:11 });
+      y += 6;
+      d.notes.forEach(n=>{
+        this.text(doc, dayHead(n.dk), 14, y, { bold:true, size:8.5 });
+        const lines = doc.splitTextToSize(n.text, 150);
+        doc.setFont(this.FONT,'normal'); doc.setFontSize(8.5); doc.setTextColor(40,46,62);
+        doc.text(lines, 42, y);
+        y += 4.6*lines.length + 1.4;
+      });
+    }
     this.footer(doc, week);
 
     // chart pages: 2 columns x 4 rows
